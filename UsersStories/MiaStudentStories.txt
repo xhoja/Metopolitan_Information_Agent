@@ -1,0 +1,7 @@
+Instant Guidance: As a Student, I want to ask M.I.A academic questions so that I don't have to wait for an appointment with a human adviser.
+
+Curriculum Planning: As a Student, I want M.I.A to recommend courses based on my major and progress so that I can make informed choices about my next semester.
+
+Graduation Tracking: As a Student, I want M.I.A to track my credit hours and graduation timeline so that I know exactly when I am eligible to graduate.
+
+Contextual Memory: As a Student, I want the AI to remember my goals and preferences across different chat sessions so that I don't have to repeat my background information every time.

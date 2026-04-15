@@ -1,0 +1,7 @@
+Progress Monitoring: As a Student, I want to view my current grades and GPA in real-time so that I can stay informed about my academic standing.
+
+Attendance Transparency: As a Student, I want to check my attendance records for each course so that I can ensure my participation is being tracked correctly.
+
+Credential Access: As a Student, I want to download my academic transcript so that I can provide proof of my studies for external opportunities.
+
+Task Submission: As a Student, I want to view and submit my assignments through the portal so that I can keep track of deadlines in one place.
