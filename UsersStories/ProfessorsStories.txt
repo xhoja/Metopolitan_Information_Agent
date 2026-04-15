@@ -1,0 +1,7 @@
+Course Management: As a Professor, I want to upload and manage my course materials so that students have digital access to the syllabus and resources.
+
+Academic Assessment: As a Professor, I want to record and update student grades so that students can see their performance in real-time.
+
+Attendance Tracking: As a Professor, I want to manage student attendance records so that I can monitor participation and meet institutional requirements.
+
+Assignment Distribution: As a Professor, I want to create projects and assignments with specific due dates so that I can organize the curriculum effectively.

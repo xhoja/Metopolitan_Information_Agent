@@ -1,0 +1,5 @@
+Account Creation: As an Administrator, I want to create new student and professor accounts so that new members of the university can access the system.
+
+Role Management: As an Administrator, I want to assign and update user roles so that I can control access permissions as staff responsibilities change.
+
+System Oversight: As an Administrator, I want full access to all institutional records and courses so that I can maintain a single source of truth for the entire university.
