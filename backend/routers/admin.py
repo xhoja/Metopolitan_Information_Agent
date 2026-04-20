@@ -65,3 +65,101 @@ def delete_user(user_id: str, authorization: str = Header(...)):
     require_admin(token)
     supabase.table("users").delete().eq("id", user_id).execute()
     return {"message": "User deleted"}
+
+@router.get("/courses")
+def get_all_courses(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    courses = supabase.table("courses").select("id, code, title, department, credits, professor_id, professors(user_id, users(name))").execute().data
+    result = []
+    for c in courses:
+        enrollment_count = len(supabase.table("enrollments").select("id").eq("course_id", c["id"]).execute().data)
+        professor_name = ""
+        try:
+            professor_name = c["professors"]["users"]["name"]
+        except:
+            professor_name = ""
+        result.append({
+            "id": c["id"],
+            "code": c["code"],
+            "title": c["title"],
+            "department": c["department"],
+            "credits": c["credits"],
+            "professor_name": professor_name,
+            "enrollment_count": enrollment_count
+        })
+    return result
+
+@router.get("/enrollments")
+def get_all_enrollments(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    enrollments = supabase.table("enrollments").select("id, created_at, students(user_id, users(name)), courses(title, code)").execute().data
+    result = []
+    for e in enrollments:
+        try:
+            student_name = e["students"]["users"]["name"]
+        except:
+            student_name = ""
+        try:
+            course_title = e["courses"]["title"]
+            course_code = e["courses"]["code"]
+        except:
+            course_title = ""
+            course_code = ""
+        result.append({
+            "id": e["id"],
+            "student_name": student_name,
+            "course_title": course_title,
+            "course_code": course_code,
+            "created_at": e["created_at"]
+        })
+    return result
+
+@router.get("/attendance")
+def get_all_attendance(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    records = supabase.table("attendance").select("id, date, status, students(user_id, users(name)), courses(title)").execute().data
+    result = []
+    for r in records:
+        try:
+            student_name = r["students"]["users"]["name"]
+        except:
+            student_name = ""
+        try:
+            course_title = r["courses"]["title"]
+        except:
+            course_title = ""
+        result.append({
+            "id": r["id"],
+            "student_name": student_name,
+            "course_title": course_title,
+            "date": r["date"],
+            "status": r["status"]
+        })
+    return result
+
+@router.get("/grades")
+def get_all_grades(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    grades = supabase.table("grades").select("id, value, semester, students(user_id, users(name)), courses(title)").execute().data
+    result = []
+    for g in grades:
+        try:
+            student_name = g["students"]["users"]["name"]
+        except:
+            student_name = ""
+        try:
+            course_title = g["courses"]["title"]
+        except:
+            course_title = ""
+        result.append({
+            "id": g["id"],
+            "student_name": student_name,
+            "course_title": course_title,
+            "value": g["value"],
+            "semester": g["semester"]
+        })
+    return result

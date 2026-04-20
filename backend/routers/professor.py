@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Optional
 from db import supabase
 from routers.auth import decode_token
+import uuid
 
 router = APIRouter()
 
@@ -100,3 +101,49 @@ def create_assignment(data: AssignmentCreate, authorization: str = Header(...)):
 def get_assignments(course_id: str, authorization: str = Header(...)):
     res = supabase.table("assignments").select("*").eq("course_id", course_id).execute()
     return res.data
+
+@router.get("/courses/{course_id}/students")
+def get_course_students(course_id: str, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    get_professor_id(token)
+    enrollments = supabase.table("enrollments").select("id, created_at, students(user_id, users(id, name, email))").eq("course_id", course_id).execute().data
+    result = []
+    for e in enrollments:
+        try:
+            result.append({
+                "id": e["students"]["users"]["id"],
+                "name": e["students"]["users"]["name"],
+                "email": e["students"]["users"]["email"],
+                "enrolled_at": e["created_at"]
+            })
+        except:
+            continue
+    return result
+
+@router.get("/courses/{course_id}/materials")
+def get_materials(course_id: str, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    get_professor_id(token)
+    res = supabase.table("materials").select("id, title, file_url, file_name, uploaded_at").eq("course_id", course_id).execute()
+    return res.data
+
+@router.post("/courses/{course_id}/materials")
+async def upload_material(
+    course_id: str,
+    title: str = Form(...),
+    file: UploadFile = File(...),
+    authorization: str = Header(...)
+):
+    token = authorization.replace("Bearer ", "")
+    get_professor_id(token)
+    file_bytes = await file.read()
+    file_name = f"{uuid.uuid4()}_{file.filename}"
+    supabase.storage.from_("materials").upload(file_name, file_bytes, {"content-type": file.content_type})
+    file_url = supabase.storage.from_("materials").get_public_url(file_name)
+    res = supabase.table("materials").insert({
+        "course_id": course_id,
+        "title": title,
+        "file_url": file_url,
+        "file_name": file.filename
+    }).execute()
+    return res.data[0]
