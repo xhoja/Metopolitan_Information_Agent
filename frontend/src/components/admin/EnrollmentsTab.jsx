@@ -23,7 +23,7 @@ export default function EnrollmentsTab() {
   return (
     <div>
       <div className="mb-8">
-        <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Registry</p>
+        <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">Registry</p>
         <h1 className="text-3xl font-semibold text-white tracking-tight">Enrollments</h1>
         {!loading && !error && (
           <p className="text-slate-500 text-sm mt-1">{enrollments.length} enrollment{enrollments.length !== 1 ? 's' : ''} total</p>
@@ -39,7 +39,7 @@ export default function EnrollmentsTab() {
         />
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading…</div>
         ) : error ? (
@@ -59,7 +59,7 @@ export default function EnrollmentsTab() {
             </thead>
             <tbody>
               {filtered.map((e, i) => (
-                <tr key={e.id} className={`hover:bg-slate-800/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                <tr key={e.id} className={`hover:bg-slate-950/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                   <td className="px-6 py-4 font-medium text-white">{e.student_name || e.student_id}</td>
                   <td className="px-6 py-4 text-slate-300">{e.course_title || e.course_id}</td>
                   <td className="px-6 py-4">

@@ -23,7 +23,7 @@ export default function CoursesTab() {
   return (
     <div>
       <div className="mb-8">
-        <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Curriculum</p>
+        <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">Curriculum</p>
         <h1 className="text-3xl font-semibold text-white tracking-tight">Courses</h1>
         {!loading && !error && (
           <p className="text-slate-500 text-sm mt-1">{courses.length} course{courses.length !== 1 ? 's' : ''} total</p>
@@ -39,7 +39,7 @@ export default function CoursesTab() {
         />
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading…</div>
         ) : error ? (
@@ -59,7 +59,7 @@ export default function CoursesTab() {
             </thead>
             <tbody>
               {filtered.map((c, i) => (
-                <tr key={c.id} className={`hover:bg-slate-800/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                <tr key={c.id} className={`hover:bg-slate-950/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                   <td className="px-6 py-4">
                     <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">{c.code}</span>
                   </td>

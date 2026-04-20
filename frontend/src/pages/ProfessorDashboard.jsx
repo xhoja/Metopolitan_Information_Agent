@@ -242,11 +242,11 @@ export default function ProfessorDashboard() {
               <>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
                   <StatCard label="My Courses" value={courses.length} color="text-amber-400" />
-                  <StatCard label="Total Credits" value={courses.reduce((s, c) => s + (c.credits || 0), 0)} color="text-blue-400" />
+                  <StatCard label="Total Credits" value={courses.reduce((s, c) => s + (c.credits || 0), 0)} color="text-blue-300" />
                   <StatCard label="Departments" value={new Set(courses.map(c => c.department).filter(Boolean)).size} color="text-emerald-400" />
                 </div>
 
-                <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
                     <h2 className="text-sm font-semibold text-white">My Courses</h2>
                     <button onClick={() => setTab('courses')} className="text-amber-400 hover:text-amber-300 text-xs transition">
@@ -259,7 +259,7 @@ export default function ProfessorDashboard() {
                     <table className="w-full text-sm">
                       <tbody>
                         {courses.slice(0, 5).map((c, i) => (
-                          <tr key={c.id} className={`hover:bg-slate-800/40 transition-colors ${i < courses.slice(0, 5).length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                          <tr key={c.id} className={`hover:bg-slate-950/40 transition-colors ${i < courses.slice(0, 5).length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                             <td className="px-6 py-3.5 font-medium text-white">{c.title}</td>
                             <td className="px-6 py-3.5 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{c.code}</td>
                             <td className="px-6 py-3.5 text-slate-500 text-xs">{c.department || '—'}</td>
@@ -307,7 +307,7 @@ export default function ProfessorDashboard() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {courses.map(c => (
-                  <div key={c.id} className="bg-slate-900 border border-slate-800 hover:border-amber-500/40 rounded-xl p-6 transition-colors">
+                  <div key={c.id} className="bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl p-6 transition-colors">
                     <div className="flex items-start justify-between mb-3">
                       <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
                         {c.code}
@@ -347,9 +347,9 @@ export default function ProfessorDashboard() {
             {!rosterCourse ? (
               <EmptyState message="Select a course to view enrolled students." />
             ) : rosterLoading ? (
-              <div className="flex items-center justify-center py-24 text-slate-500 text-sm bg-slate-900 border border-slate-800 rounded-xl">Loading…</div>
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm bg-slate-800 border border-slate-700 rounded-xl">Loading…</div>
             ) : rosterError === 'pending' ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3 bg-slate-900 border border-slate-800 rounded-xl">
+              <div className="flex flex-col items-center justify-center py-24 gap-3 bg-slate-800 border border-slate-700 rounded-xl">
                 <div className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center">
                   <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -361,7 +361,7 @@ export default function ProfessorDashboard() {
             ) : roster.length === 0 ? (
               <EmptyState message="No students enrolled in this course." />
             ) : (
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+              <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
                   <h2 className="text-sm font-semibold text-white">Enrolled Students</h2>
                   <span className="text-slate-500 text-xs">{roster.length} student{roster.length !== 1 ? 's' : ''}</span>
@@ -376,7 +376,7 @@ export default function ProfessorDashboard() {
                   </thead>
                   <tbody>
                     {roster.map((s, i) => (
-                      <tr key={s.id || i} className={`hover:bg-slate-800/40 transition-colors ${i < roster.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                      <tr key={s.id || i} className={`hover:bg-slate-950/40 transition-colors ${i < roster.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                         <td className="px-6 py-4 font-medium text-white">{s.name || s.student_id}</td>
                         <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{s.email || '—'}</td>
                         <td className="px-6 py-4 text-slate-500 text-xs">
@@ -419,7 +419,7 @@ export default function ProfessorDashboard() {
                 {/* Upload form */}
                 <div>
                   <h2 className="text-sm font-semibold text-white mb-4">Upload Material</h2>
-                  <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
                     <form onSubmit={handleUploadMaterial} className="flex flex-col gap-4">
                       <Field label="Title (optional)">
                         <input
@@ -478,9 +478,9 @@ export default function ProfessorDashboard() {
                 <div>
                   <h2 className="text-sm font-semibold text-white mb-4">Uploaded Materials</h2>
                   {matLoading ? (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
                   ) : matError === 'pending' ? (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3 bg-slate-900 border border-slate-800 rounded-xl">
+                    <div className="flex flex-col items-center justify-center py-16 gap-3 bg-slate-800 border border-slate-700 rounded-xl">
                       <div className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center">
                         <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -490,11 +490,11 @@ export default function ProfessorDashboard() {
                       <code className="text-xs text-slate-500 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded font-mono">GET /professor/courses/&#123;id&#125;/materials</code>
                     </div>
                   ) : materials.length === 0 ? (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No materials uploaded yet.</div>
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No materials uploaded yet.</div>
                   ) : (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
                       {materials.map((m, i) => (
-                        <div key={m.id || i} className={`flex items-center gap-4 px-5 py-4 hover:bg-slate-800/40 transition-colors ${i < materials.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                        <div key={m.id || i} className={`flex items-center gap-4 px-5 py-4 hover:bg-slate-950/40 transition-colors ${i < materials.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                           <div className="w-9 h-9 bg-amber-500/10 border border-amber-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
                             <svg className="w-4 h-4 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -570,7 +570,7 @@ export default function ProfessorDashboard() {
             ) : assignments.length === 0 ? (
               <EmptyState message="No assignments for this course yet." />
             ) : (
-              <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+              <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-800">
@@ -581,10 +581,10 @@ export default function ProfessorDashboard() {
                   </thead>
                   <tbody>
                     {assignments.map((a, i) => (
-                      <tr key={a.id} className={`hover:bg-slate-800/40 transition-colors ${i < assignments.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                      <tr key={a.id} className={`hover:bg-slate-950/40 transition-colors ${i < assignments.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                         <td className="px-6 py-4 font-medium text-white">{a.title}</td>
                         <td className="px-6 py-4">
-                          <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30 capitalize">
+                          <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-blue-300/15 text-blue-300 border border-blue-400/30 capitalize">
                             {a.type}
                           </span>
                         </td>
@@ -610,7 +610,7 @@ export default function ProfessorDashboard() {
             </div>
 
             <div className="max-w-md">
-              <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
                 <form onSubmit={handleAddGrade} className="flex flex-col gap-4">
                   <Field label="Course">
                     <select
@@ -682,7 +682,7 @@ export default function ProfessorDashboard() {
               {/* Mark form */}
               <div>
                 <h2 className="text-sm font-semibold text-white mb-4">Mark Attendance</h2>
-                <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
                   <form onSubmit={handleMarkAttendance} className="flex flex-col gap-4">
                     <Field label="Course">
                       <select
@@ -748,11 +748,11 @@ export default function ProfessorDashboard() {
                 </h2>
                 {attendCourse && (
                   attendLoading ? (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
                   ) : attendRecords.length === 0 ? (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No records yet.</div>
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No records yet.</div>
                   ) : (
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+                    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-slate-800">
@@ -763,7 +763,7 @@ export default function ProfessorDashboard() {
                         </thead>
                         <tbody>
                           {attendRecords.map((r, i) => (
-                            <tr key={r.id || i} className={`hover:bg-slate-800/40 transition-colors ${i < attendRecords.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                            <tr key={r.id || i} className={`hover:bg-slate-950/40 transition-colors ${i < attendRecords.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                               <td className="px-4 py-3 text-slate-400 text-xs truncate max-w-[140px]" style={{ fontFamily: "'DM Mono', monospace" }}>{r.student_id}</td>
                               <td className="px-4 py-3 text-slate-400 text-xs">{r.date}</td>
                               <td className="px-4 py-3">
@@ -862,7 +862,7 @@ export default function ProfessorDashboard() {
 
 function StatCard({ label, value, color }) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
       <p className={`text-4xl font-semibold ${color} mb-1`}>{value}</p>
       <p className="text-slate-500 text-sm">{label}</p>
     </div>
@@ -871,7 +871,7 @@ function StatCard({ label, value, color }) {
 
 function EmptyState({ message }) {
   return (
-    <div className="flex items-center justify-center py-24 text-slate-500 text-sm bg-slate-900 border border-slate-800 rounded-xl">
+    <div className="flex items-center justify-center py-24 text-slate-500 text-sm bg-slate-800 border border-slate-700 rounded-xl">
       {message}
     </div>
   )
@@ -881,7 +881,7 @@ function Modal({ title, onClose, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
+      <div className="relative bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800">
           <h2 className="text-base font-semibold text-white">{title}</h2>
           <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">

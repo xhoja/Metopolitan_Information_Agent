@@ -12,7 +12,7 @@ export default function ProfessorsTab({ users }) {
     <div>
       <div className="flex items-end justify-between mb-8">
         <div>
-          <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Faculty</p>
+          <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">Faculty</p>
           <h1 className="text-3xl font-semibold text-white tracking-tight">Professors</h1>
           <p className="text-slate-500 text-sm mt-1">{professors.length} professor{professors.length !== 1 ? 's' : ''}</p>
         </div>
@@ -27,7 +27,7 @@ export default function ProfessorsTab({ users }) {
         />
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center py-24 text-slate-500 text-sm">
             {search ? 'No professors match your search.' : 'No professors yet.'}
@@ -43,7 +43,7 @@ export default function ProfessorsTab({ users }) {
             </thead>
             <tbody>
               {filtered.map((p, i) => (
-                <tr key={p.id} className={`hover:bg-slate-800/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                <tr key={p.id} className={`hover:bg-slate-950/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                   <td className="px-6 py-4 font-medium text-white">{p.name}</td>
                   <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{p.email}</td>
                   <td className="px-6 py-4 text-slate-500 text-xs">

@@ -3,7 +3,7 @@ import api from '../../api/axios'
 
 function gradeLabel(value) {
   if (value >= 90) return { label: 'A', color: 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30' }
-  if (value >= 80) return { label: 'B', color: 'text-blue-300 bg-blue-500/15 border-blue-500/30' }
+  if (value >= 80) return { label: 'B', color: 'text-blue-300 bg-blue-300/15 border-blue-400/30' }
   if (value >= 70) return { label: 'C', color: 'text-amber-300 bg-amber-500/15 border-amber-500/30' }
   if (value >= 60) return { label: 'D', color: 'text-orange-300 bg-orange-500/15 border-orange-500/30' }
   return { label: 'F', color: 'text-rose-300 bg-rose-500/15 border-rose-500/30' }
@@ -40,21 +40,21 @@ export default function GradesTab() {
   return (
     <div>
       <div className="mb-8">
-        <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Assessment</p>
+        <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">Assessment</p>
         <h1 className="text-3xl font-semibold text-white tracking-tight">Grades</h1>
       </div>
 
       {!loading && !error && grades.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8 max-w-lg">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
             <p className="text-2xl font-semibold text-white">{grades.length}</p>
             <p className="text-slate-500 text-xs mt-0.5">Total records</p>
           </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
-            <p className="text-2xl font-semibold text-blue-400">{avg}</p>
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
+            <p className="text-2xl font-semibold text-blue-300">{avg}</p>
             <p className="text-slate-500 text-xs mt-0.5">Class average</p>
           </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
             <p className="text-2xl font-semibold text-emerald-400">{grades.filter(g => g.value >= 60).length}</p>
             <p className="text-slate-500 text-xs mt-0.5">Passing</p>
           </div>
@@ -80,7 +80,7 @@ export default function GradesTab() {
         )}
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading…</div>
         ) : error ? (
@@ -100,7 +100,7 @@ export default function GradesTab() {
               {filtered.map((g, i) => {
                 const { label, color } = gradeLabel(g.value)
                 return (
-                  <tr key={g.id || i} className={`hover:bg-slate-800/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                  <tr key={g.id || i} className={`hover:bg-slate-950/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                     <td className="px-6 py-4 font-medium text-white">{g.student_name || g.student_id}</td>
                     <td className="px-6 py-4 text-slate-400">{g.course_title || g.course_id}</td>
                     <td className="px-6 py-4 text-slate-500 text-sm">{g.semester}</td>

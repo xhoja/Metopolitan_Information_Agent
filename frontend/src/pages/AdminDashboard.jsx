@@ -24,7 +24,7 @@ const TABS = [
 const ROLE_STYLES = {
   admin:     'bg-rose-500/15 text-rose-300 border border-rose-500/30',
   professor: 'bg-amber-500/15 text-amber-300 border border-amber-500/30',
-  student:   'bg-blue-500/15 text-blue-300 border border-blue-500/30',
+  student:   'bg-blue-300/15 text-blue-300 border border-blue-400/30',
 }
 
 const EMPTY_FORM = { name: '', email: '', password: '', role: 'student', major: '', department: '', title: '' }
@@ -35,6 +35,7 @@ export default function AdminDashboard() {
   const [loading, setLoading]       = useState(true)
   const [error, setError]           = useState('')
   const [modal, setModal]           = useState(null)
+  const [showPass, setShowPass]     = useState(false)
   const [form, setForm]             = useState(EMPTY_FORM)
   const [saving, setSaving]         = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -107,7 +108,7 @@ export default function AdminDashboard() {
         {tab === 'overview' && (
           <div>
             <div className="mb-10">
-              <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Welcome back</p>
+              <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">Welcome back</p>
               <h1 className="text-3xl font-semibold text-white tracking-tight">
                 {localStorage.getItem('name') || 'Admin'}
               </h1>
@@ -118,11 +119,11 @@ export default function AdminDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
               {[
                 { label: 'Total Users',  value: users.length,       color: 'text-white' },
-                { label: 'Students',     value: students.length,    color: 'text-blue-400' },
+                { label: 'Students',     value: students.length,    color: 'text-blue-300' },
                 { label: 'Professors',   value: professors.length,  color: 'text-amber-400' },
                 { label: 'Admins',       value: admins.length,      color: 'text-rose-400' },
               ].map(s => (
-                <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div key={s.label} className="bg-slate-800 border border-slate-700 rounded-xl p-6">
                   <p className={`text-4xl font-semibold ${s.color} mb-1`}>{s.value}</p>
                   <p className="text-slate-500 text-sm">{s.label}</p>
                 </div>
@@ -130,10 +131,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent users */}
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
                 <h2 className="text-sm font-semibold text-white">Recent Users</h2>
-                <button onClick={() => setTab('users')} className="text-blue-400 hover:text-blue-300 text-xs transition">
+                <button onClick={() => setTab('users')} className="text-blue-300 hover:text-blue-300 text-xs transition">
                   View all →
                 </button>
               </div>
@@ -143,7 +144,7 @@ export default function AdminDashboard() {
                     <tr><td className="px-6 py-8 text-slate-500 text-center" colSpan={3}>Loading…</td></tr>
                   ) : (
                     [...users].slice(-5).reverse().map((user, i, arr) => (
-                      <tr key={user.id} className={`hover:bg-slate-800/40 transition-colors ${i < arr.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                      <tr key={user.id} className={`hover:bg-slate-950/40 transition-colors ${i < arr.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                         <td className="px-6 py-3.5 font-medium text-white">{user.name}</td>
                         <td className="px-6 py-3.5 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{user.email}</td>
                         <td className="px-6 py-3.5">
@@ -165,12 +166,12 @@ export default function AdminDashboard() {
           <div>
             <div className="flex items-end justify-between mb-8">
               <div>
-                <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">System Control</p>
+                <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">System Control</p>
                 <h1 className="text-3xl font-semibold text-white tracking-tight">User Management</h1>
               </div>
               <button
                 onClick={openCreate}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition shadow-lg shadow-blue-900/30"
+                className="flex items-center gap-2 bg-blue-400 hover:bg-blue-300 text-white text-sm font-medium px-5 py-2.5 rounded-lg transition shadow-lg shadow-blue-900/30"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -179,7 +180,7 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
               {loading ? (
                 <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading users…</div>
               ) : error ? (
@@ -195,7 +196,7 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody>
                     {users.map((user, i) => (
-                      <tr key={user.id} className={`border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors ${i === users.length - 1 ? 'border-b-0' : ''}`}>
+                      <tr key={user.id} className={`border-b border-slate-800/60 hover:bg-slate-950/40 transition-colors ${i === users.length - 1 ? 'border-b-0' : ''}`}>
                         <td className="px-6 py-4 font-medium text-white">{user.name}</td>
                         <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{user.email}</td>
                         <td className="px-6 py-4">
@@ -208,7 +209,7 @@ export default function AdminDashboard() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
-                            <button onClick={() => openEdit(user)} className="text-slate-500 hover:text-blue-400 transition-colors p-1.5 rounded hover:bg-slate-800">
+                            <button onClick={() => openEdit(user)} className="text-slate-500 hover:text-blue-300 transition-colors p-1.5 rounded hover:bg-slate-800">
                               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 013.182 3.182L6.75 19.963l-4.5 1.5 1.5-4.5L16.862 3.487z" />
                               </svg>
@@ -232,10 +233,10 @@ export default function AdminDashboard() {
         {tab === 'roles' && (
           <div>
             <div className="mb-8">
-              <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Permissions</p>
+              <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">Permissions</p>
               <h1 className="text-3xl font-semibold text-white tracking-tight">Role Assignment</h1>
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-slate-800">
@@ -273,22 +274,22 @@ export default function AdminDashboard() {
         {tab === 'system' && (
           <div>
             <div className="mb-8">
-              <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">System</p>
+              <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">System</p>
               <h1 className="text-3xl font-semibold text-white tracking-tight">System Overview</h1>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               {[
                 { label: 'Total Users',    value: users.length,       color: 'text-white' },
-                { label: 'Students',       value: students.length,    color: 'text-blue-400' },
+                { label: 'Students',       value: students.length,    color: 'text-blue-300' },
                 { label: 'Professors',     value: professors.length,  color: 'text-amber-400' },
               ].map(s => (
-                <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+                <div key={s.label} className="bg-slate-800 border border-slate-700 rounded-xl p-6">
                   <p className={`text-4xl font-semibold ${s.color} mb-1`}>{s.value}</p>
                   <p className="text-slate-500 text-sm">{s.label}</p>
                 </div>
               ))}
             </div>
-            <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-800">
                 <h2 className="text-sm font-semibold text-white">All Users</h2>
               </div>
@@ -302,7 +303,7 @@ export default function AdminDashboard() {
                 </thead>
                 <tbody>
                   {users.map((user, i) => (
-                    <tr key={user.id} className={`border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors ${i === users.length - 1 ? 'border-b-0' : ''}`}>
+                    <tr key={user.id} className={`border-b border-slate-800/60 hover:bg-slate-950/40 transition-colors ${i === users.length - 1 ? 'border-b-0' : ''}`}>
                       <td className="px-6 py-4 font-medium text-white">{user.name}</td>
                       <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{user.email}</td>
                       <td className="px-6 py-4">
@@ -325,7 +326,7 @@ export default function AdminDashboard() {
       {modal !== null && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={closeModal} />
-          <div className="relative bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
+          <div className="relative bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between px-6 py-5 border-b border-slate-800">
               <h2 className="text-base font-semibold text-white">
                 {modal === 'create' ? 'Add New User' : `Edit — ${modal.name}`}
@@ -344,7 +345,15 @@ export default function AdminDashboard() {
                 <input required type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="email@umt.edu.al" className="input-base" />
               </Field>
               <Field label={modal === 'create' ? 'Password' : 'New Password (leave blank to keep)'}>
-                <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder={modal === 'create' ? 'Min 6 characters' : '••••••••'} required={modal === 'create'} className="input-base" />
+                <div className="relative">
+                  <input type={showPass ? 'text' : 'password'} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} placeholder={modal === 'create' ? 'Min 6 characters' : '••••••••'} required={modal === 'create'} className="input-base pr-10 w-full" />
+                  <button type="button" onClick={() => setShowPass(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition">
+                    {showPass
+                      ? <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>
+                      : <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    }
+                  </button>
+                </div>
               </Field>
               <Field label="Role">
                 <select value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} className="input-base">
@@ -371,7 +380,7 @@ export default function AdminDashboard() {
               {formError && <p className="text-rose-400 text-sm">{formError}</p>}
               <div className="flex gap-3 pt-1">
                 <button type="button" onClick={closeModal} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium py-2.5 rounded-lg transition">Cancel</button>
-                <button type="submit" disabled={saving} className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition">
+                <button type="submit" disabled={saving} className="flex-1 bg-blue-400 hover:bg-blue-300 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition">
                   {saving ? 'Saving…' : modal === 'create' ? 'Create User' : 'Save Changes'}
                 </button>
               </div>
@@ -384,7 +393,7 @@ export default function AdminDashboard() {
       {deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm shadow-2xl p-6">
+          <div className="relative bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-sm shadow-2xl p-6">
             <div className="w-10 h-10 bg-rose-500/15 border border-rose-500/30 rounded-full flex items-center justify-center mb-4">
               <svg className="w-5 h-5 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126z" />
@@ -422,7 +431,7 @@ function RoleRow({ user, isLast, onRoleChange }) {
   }
 
   return (
-    <tr className={`border-b border-slate-800/60 hover:bg-slate-800/40 transition-colors ${isLast ? 'border-b-0' : ''}`}>
+    <tr className={`border-b border-slate-800/60 hover:bg-slate-950/40 transition-colors ${isLast ? 'border-b-0' : ''}`}>
       <td className="px-6 py-4 font-medium text-white">{user.name}</td>
       <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{user.email}</td>
       <td className="px-6 py-4">

@@ -24,10 +24,10 @@ function Card({ title, desc, highlight }) {
   return (
     <div className={`bg-slate-900 border rounded-xl p-6 transition cursor-pointer ${
       highlight
-        ? 'border-blue-500 hover:border-blue-400 bg-blue-950/30'
-        : 'border-slate-800 hover:border-blue-500'
+        ? 'border-blue-400 hover:border-blue-400 bg-blue-900/30'
+        : 'border-slate-800 hover:border-blue-400'
     }`}>
-      <h3 className={`text-lg font-semibold mb-2 ${highlight ? 'text-blue-400' : 'text-white'}`}>{title}</h3>
+      <h3 className={`text-lg font-semibold mb-2 ${highlight ? 'text-blue-300' : 'text-white'}`}>{title}</h3>
       <p className="text-slate-400 text-sm">{desc}</p>
     </div>
   )

@@ -38,7 +38,7 @@ export default function AttendanceTab() {
   return (
     <div>
       <div className="mb-8">
-        <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Tracking</p>
+        <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">Tracking</p>
         <h1 className="text-3xl font-semibold text-white tracking-tight">Attendance</h1>
       </div>
 
@@ -49,7 +49,7 @@ export default function AttendanceTab() {
             { label: 'Absent',  value: counts.absent,  color: 'text-rose-400' },
             { label: 'Late',    value: counts.late,    color: 'text-amber-400' },
           ].map(s => (
-            <div key={s.label} className="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <div key={s.label} className="bg-slate-800 border border-slate-700 rounded-xl p-4">
               <p className={`text-2xl font-semibold ${s.color}`}>{s.value}</p>
               <p className="text-slate-500 text-xs mt-0.5">{s.label}</p>
             </div>
@@ -76,7 +76,7 @@ export default function AttendanceTab() {
         </select>
       </div>
 
-      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading…</div>
         ) : error ? (
@@ -94,7 +94,7 @@ export default function AttendanceTab() {
             </thead>
             <tbody>
               {filtered.map((r, i) => (
-                <tr key={r.id || i} className={`hover:bg-slate-800/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                <tr key={r.id || i} className={`hover:bg-slate-950/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                   <td className="px-6 py-4 font-medium text-white">{r.student_name || r.student_id}</td>
                   <td className="px-6 py-4 text-slate-400">{r.course_title || r.course_id}</td>
                   <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{r.date}</td>
