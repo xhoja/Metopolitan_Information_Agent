@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react'
 import DashboardNav from '../components/DashboardNav'
 import api from '../api/axios'
+import StudentsTab   from '../components/admin/StudentsTab'
+import ProfessorsTab from '../components/admin/ProfessorsTab'
+import CoursesTab    from '../components/admin/CoursesTab'
+import EnrollmentsTab from '../components/admin/EnrollmentsTab'
+import AttendanceTab from '../components/admin/AttendanceTab'
+import GradesTab     from '../components/admin/GradesTab'
 
 const TABS = [
-  { id: 'overview',  label: 'Overview' },
-  { id: 'users',     label: 'User Management' },
-  { id: 'roles',     label: 'Role Assignment' },
-  { id: 'system',    label: 'System Overview' },
+  { id: 'overview',     label: 'Overview' },
+  { id: 'users',        label: 'Users' },
+  { id: 'students',     label: 'Students' },
+  { id: 'professors',   label: 'Professors' },
+  { id: 'courses',      label: 'Courses' },
+  { id: 'enrollments',  label: 'Enrollments' },
+  { id: 'attendance',   label: 'Attendance' },
+  { id: 'grades',       label: 'Grades' },
+  { id: 'roles',        label: 'Role Assignment' },
+  { id: 'system',       label: 'System' },
 ]
 
 const ROLE_STYLES = {
@@ -249,6 +261,13 @@ export default function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {tab === 'students'    && <StudentsTab   users={users} />}
+        {tab === 'professors'  && <ProfessorsTab users={users} />}
+        {tab === 'courses'     && <CoursesTab />}
+        {tab === 'enrollments' && <EnrollmentsTab />}
+        {tab === 'attendance'  && <AttendanceTab />}
+        {tab === 'grades'      && <GradesTab />}
 
         {/* SYSTEM TAB */}
         {tab === 'system' && (
