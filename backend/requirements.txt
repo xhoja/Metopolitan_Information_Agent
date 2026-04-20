@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+supabase
+python-dotenv
+pyjwt
+passlib[bcrypt]
+python-multipart
+openai
+bcrypt==4.0.1

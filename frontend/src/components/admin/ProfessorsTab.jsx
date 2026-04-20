@@ -1,0 +1,60 @@
+import { useState } from 'react'
+
+export default function ProfessorsTab({ users }) {
+  const [search, setSearch] = useState('')
+  const professors = users.filter(u => u.role === 'professor')
+  const filtered = professors.filter(p =>
+    p.name.toLowerCase().includes(search.toLowerCase()) ||
+    p.email.toLowerCase().includes(search.toLowerCase())
+  )
+
+  return (
+    <div>
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <p className="text-blue-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Faculty</p>
+          <h1 className="text-3xl font-semibold text-white tracking-tight">Professors</h1>
+          <p className="text-slate-500 text-sm mt-1">{professors.length} professor{professors.length !== 1 ? 's' : ''}</p>
+        </div>
+      </div>
+
+      <div className="mb-5">
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by name or email…"
+          className="input-base w-full md:w-80"
+        />
+      </div>
+
+      <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
+        {filtered.length === 0 ? (
+          <div className="flex items-center justify-center py-24 text-slate-500 text-sm">
+            {search ? 'No professors match your search.' : 'No professors yet.'}
+          </div>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-800">
+                {['Name', 'Email', 'Joined'].map(h => (
+                  <th key={h} className="text-left px-6 py-4 text-slate-500 font-medium text-xs uppercase tracking-widest">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((p, i) => (
+                <tr key={p.id} className={`hover:bg-slate-800/40 transition-colors ${i < filtered.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                  <td className="px-6 py-4 font-medium text-white">{p.name}</td>
+                  <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{p.email}</td>
+                  <td className="px-6 py-4 text-slate-500 text-xs">
+                    {p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  )
+}
