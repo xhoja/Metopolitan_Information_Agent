@@ -106,7 +106,7 @@ def get_assignments(course_id: str, authorization: str = Header(...)):
 def get_course_students(course_id: str, authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     get_professor_id(token)
-    enrollments = supabase.table("enrollments").select("id, created_at, students(user_id, users(id, name, email))").eq("course_id", course_id).execute().data
+    enrollments = supabase.table("enrollments").select("id, students(user_id, users(id, name, email))").eq("course_id", course_id).execute().data
     result = []
     for e in enrollments:
         try:
@@ -114,7 +114,7 @@ def get_course_students(course_id: str, authorization: str = Header(...)):
                 "id": e["students"]["users"]["id"],
                 "name": e["students"]["users"]["name"],
                 "email": e["students"]["users"]["email"],
-                "enrolled_at": e["created_at"]
+                "enrolled_at": None
             })
         except:
             continue
@@ -124,7 +124,7 @@ def get_course_students(course_id: str, authorization: str = Header(...)):
 def get_materials(course_id: str, authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     get_professor_id(token)
-    res = supabase.table("materials").select("id, title, file_url, file_name, uploaded_at").eq("course_id", course_id).execute()
+    res = supabase.table("materials").select("id, title, file_url, file_name").eq("course_id", course_id).execute()
     return res.data
 
 @router.post("/courses/{course_id}/materials")

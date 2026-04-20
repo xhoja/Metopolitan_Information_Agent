@@ -94,7 +94,7 @@ def get_all_courses(authorization: str = Header(...)):
 def get_all_enrollments(authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     require_admin(token)
-    enrollments = supabase.table("enrollments").select("id, created_at, students(user_id, users(name)), courses(title, code)").execute().data
+    enrollments = supabase.table("enrollments").select("id, students(user_id, users(name)), courses(title, code)").execute().data
     result = []
     for e in enrollments:
         try:
@@ -112,7 +112,7 @@ def get_all_enrollments(authorization: str = Header(...)):
             "student_name": student_name,
             "course_title": course_title,
             "course_code": course_code,
-            "created_at": e["created_at"]
+            "created_at": None
         })
     return result
 
