@@ -48,8 +48,8 @@ Build a full-stack, AI-powered university management system that gives students 
 
 | Meeting Type | Day & Time | Location / Platform |
 |-------------|------------|---------------------|
-| Weekly team meeting | 2026-04-20 at 5:00PM | Whatsapp |
-| Ad-hoc / emergency | As needed | Whatsapp |
+| Weekly team meeting | Flexible | In Person / Whatsapp |
+| Ad-hoc / emergency | As needed | In Person  |
 
 ---
 
