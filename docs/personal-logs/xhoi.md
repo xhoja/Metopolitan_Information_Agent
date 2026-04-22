@@ -14,19 +14,19 @@ This week I completed the UI polish pass across all dashboards — switched to l
 
 ## Week 3 — 2026-04-15
 
-[FILL IN — what did you work on this week? What did you learn? What was blocked?]
+
 
 ---
 
 ## Week 2 — 2026-04-08
 
-[FILL IN]
+
 
 ---
 
 ## Week 1 — 2026-04-01
 
-[FILL IN — first week: team formed, project scoped, repo set up, initial planning]
+
 
 ---
 
@@ -34,14 +34,14 @@ This week I completed the UI polish pass across all dashboards — switched to l
 
 ### React + Vite — Hello World
 
-**Date:** [FILL IN]
+**Date:** 2026-04-19
 
-**What I built:** [FILL IN — describe your Hello World app]
+**What I built:** React + Vite frontend scaffold with admin and professor dashboards, client-side routing, and authentication flow integrated with Supabase.
 
-**What worked:** [FILL IN]
+**What worked:** Vite dev server setup was fast and straightforward. React Router handled multi-role routing (admin, professor, student) cleanly. Tailwind CSS integrated without issues.
 
-**What didn't:** [FILL IN]
+**What didn't:** CORS between the Vite dev server and FastAPI backend required proxy configuration — direct API calls failed until Vite's proxy config was set up correctly.
 
-**Key finding:** [FILL IN — one or two sentences]
+**Key finding:** Vite's proxy config (`server.proxy` in `vite.config.js`) is the cleanest way to bypass CORS in development without touching the backend. React component composition with role-based routing scales well from the start.
 
-**Code:** [FILL IN — branch or folder link]
+**Code:** `feature/frontend-scaffold` branch — `src/` folder
