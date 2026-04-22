@@ -30,7 +30,7 @@ Build a full-stack, AI-powered university management system that gives students 
 | Parashqevi  | Backend Development | Pessimist | klimi.paro@gmail.com |
 | Loric| AI Agent Integration | Analyst | hagardloric@gmail.com |
 
-> Note: With 5 members, some members hold multiple course roles. Fill in above accordingly.
+
 
 ### Full Member List (Project Roles)
 
