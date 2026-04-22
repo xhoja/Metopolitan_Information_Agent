@@ -1,14 +1,10 @@
-from fastapi import APIRouter, HTTPException, Header
-from pydantic import BaseModel
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Header, UploadFile, File
 from db import supabase
 from routers.auth import decode_token
+from schemas import SubmissionCreate
+import uuid
 
 router = APIRouter()
-
-class SubmissionCreate(BaseModel):
-    assignment_id: str
-    file_url: Optional[str] = None
 
 def get_student_id(token: str):
     payload = decode_token(token)
