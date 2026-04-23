@@ -1,10 +1,16 @@
 from fastapi import APIRouter, HTTPException, Header
+from pydantic import BaseModel
 from models import UserCreate
 from db import supabase
 from routers.auth import hash_password, decode_token
 import datetime
 
 router = APIRouter()
+
+class EnrollmentCreate(BaseModel):
+    student_id: str
+    course_id: str
+    semester: str
 
 def require_admin(token: str):
     payload = decode_token(token)
@@ -89,6 +95,20 @@ def get_all_courses(authorization: str = Header(...)):
             "enrollment_count": enrollment_count
         })
     return result
+
+@router.post("/enrollments")
+def create_enrollment(data: EnrollmentCreate, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    existing = supabase.table("enrollments").select("id").eq("student_id", data.student_id).eq("course_id", data.course_id).execute()
+    if existing.data:
+        raise HTTPException(status_code=400, detail="Student already enrolled in this course")
+    res = supabase.table("enrollments").insert({
+        "student_id": data.student_id,
+        "course_id": data.course_id,
+        "semester": data.semester
+    }).execute()
+    return res.data[0]
 
 @router.get("/enrollments")
 def get_all_enrollments(authorization: str = Header(...)):
