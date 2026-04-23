@@ -1,4 +1,4 @@
 from pydantic import BaseModel
 
 class SubmissionCreate(BaseModel):
-    content: str
+    file_url: str
