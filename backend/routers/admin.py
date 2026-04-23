@@ -72,6 +72,20 @@ def delete_user(user_id: str, authorization: str = Header(...)):
     supabase.table("users").delete().eq("id", user_id).execute()
     return {"message": "User deleted"}
 
+@router.get("/students")
+def get_all_students(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    rows = supabase.table("students").select("id, user_id, users(name, email)").execute().data
+    result = []
+    for s in rows:
+        result.append({
+            "id": s["id"],
+            "name": s["users"]["name"] if s.get("users") else "",
+            "email": s["users"]["email"] if s.get("users") else "",
+        })
+    return result
+
 @router.get("/courses")
 def get_all_courses(authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
@@ -114,7 +128,7 @@ def create_enrollment(data: EnrollmentCreate, authorization: str = Header(...)):
 def get_all_enrollments(authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     require_admin(token)
-    enrollments = supabase.table("enrollments").select("id, students(user_id, users(name)), courses(title, code)").execute().data
+    enrollments = supabase.table("enrollments").select("id, created_at, students(user_id, users(name)), courses(title, code)").execute().data
     result = []
     for e in enrollments:
         try:
@@ -132,9 +146,16 @@ def get_all_enrollments(authorization: str = Header(...)):
             "student_name": student_name,
             "course_title": course_title,
             "course_code": course_code,
-            "created_at": None
+            "created_at": e.get("created_at")
         })
     return result
+
+@router.delete("/enrollments/{enrollment_id}")
+def delete_enrollment(enrollment_id: str, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    supabase.table("enrollments").delete().eq("id", enrollment_id).execute()
+    return {"message": "Enrollment deleted"}
 
 @router.get("/attendance")
 def get_all_attendance(authorization: str = Header(...)):

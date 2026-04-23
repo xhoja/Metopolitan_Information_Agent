@@ -14,8 +14,8 @@ const TABS = [
 
 const EMPTY_COURSE = { code: '', title: '', credits: 3, department: '', description: '' }
 const EMPTY_ASSIGNMENT = { title: '', description: '', due_date: '', course_id: '', type: 'homework' }
-const EMPTY_GRADE = { student_id: '', course_id: '', value: '', semester: '' }
-const EMPTY_ATTENDANCE = { student_id: '', course_id: '', date: new Date().toISOString().split('T')[0], status: 'present' }
+const EMPTY_GRADE = { student_id: '', course_id: '', value: '', semester: '', grade_type: '', weight: '' }
+const TODAY = new Date().toISOString().split('T')[0]
 
 export default function ProfessorDashboard() {
   const [tab, setTab]                   = useState('overview')
@@ -56,19 +56,27 @@ export default function ProfessorDashboard() {
   const [assignError, setAssignError]             = useState('')
 
   // grades tab
-  const [gradeForm, setGradeForm]   = useState(EMPTY_GRADE)
-  const [gradeSaving, setGradeSaving] = useState(false)
-  const [gradeError, setGradeError]   = useState('')
-  const [gradeSuccess, setGradeSuccess] = useState('')
+  const [gradeForm, setGradeForm]         = useState(EMPTY_GRADE)
+  const [gradeSaving, setGradeSaving]     = useState(false)
+  const [gradeError, setGradeError]       = useState('')
+  const [gradeSuccess, setGradeSuccess]   = useState('')
+  const [gradeStudents, setGradeStudents] = useState([])
+  const [gradeViewCourse, setGradeViewCourse] = useState('')
+  const [grades, setGrades]               = useState([])
+  const [gradesLoading, setGradesLoading] = useState(false)
 
   // attendance tab
-  const [attendCourse, setAttendCourse]   = useState('')
-  const [attendRecords, setAttendRecords] = useState([])
-  const [attendLoading, setAttendLoading] = useState(false)
-  const [attendForm, setAttendForm]       = useState(EMPTY_ATTENDANCE)
-  const [attendSaving, setAttendSaving]   = useState(false)
-  const [attendError, setAttendError]     = useState('')
-  const [attendSuccess, setAttendSuccess] = useState('')
+  const [attendCourse, setAttendCourse]           = useState('')
+  const [attendStudents, setAttendStudents]       = useState([])
+  const [attendSheet, setAttendSheet]             = useState({})  // student_id → hours_present (float)
+  const [attendDate, setAttendDate]               = useState(TODAY)
+  const [attendSessionStart, setAttendSessionStart] = useState('08:00')
+  const [attendSessionEnd, setAttendSessionEnd]   = useState('12:00')
+  const [attendRecords, setAttendRecords]         = useState([])
+  const [attendLoading, setAttendLoading]         = useState(false)
+  const [attendSaving, setAttendSaving]           = useState(false)
+  const [attendError, setAttendError]             = useState('')
+  const [attendSuccess, setAttendSuccess]         = useState('')
 
   const fetchCourses = async () => {
     try {
@@ -174,6 +182,15 @@ export default function ProfessorDashboard() {
     }
   }
 
+  useEffect(() => {
+    if (!gradeViewCourse) { setGrades([]); return }
+    setGradesLoading(true)
+    api.get(`/professor/grades/${gradeViewCourse}`)
+      .then(r => setGrades(r.data))
+      .catch(() => setGrades([]))
+      .finally(() => setGradesLoading(false))
+  }, [gradeViewCourse])
+
   const handleAddGrade = async (e) => {
     e.preventDefault()
     setGradeSaving(true)
@@ -183,6 +200,11 @@ export default function ProfessorDashboard() {
       await api.post('/professor/grades', { ...gradeForm, value: Number(gradeForm.value) })
       setGradeSuccess('Grade recorded.')
       setGradeForm(EMPTY_GRADE)
+      setGradeStudents([])
+      if (gradeViewCourse === gradeForm.course_id) {
+        const r = await api.get(`/professor/grades/${gradeForm.course_id}`)
+        setGrades(r.data)
+      }
     } catch (err) {
       setGradeError(err.response?.data?.detail || 'Failed to record grade.')
     } finally {
@@ -190,32 +212,54 @@ export default function ProfessorDashboard() {
     }
   }
 
-  const handleMarkAttendance = async (e) => {
-    e.preventDefault()
-    setAttendSaving(true)
-    setAttendError('')
-    setAttendSuccess('')
-    try {
-      await api.post('/professor/attendance', attendForm)
-      setAttendSuccess('Attendance marked.')
-      const res = await api.get(`/professor/attendance/${attendForm.course_id}`)
-      setAttendRecords(res.data)
-      setAttendForm(f => ({ ...f, student_id: '' }))
-    } catch (err) {
-      setAttendError(err.response?.data?.detail || 'Failed to mark attendance.')
-    } finally {
-      setAttendSaving(false)
-    }
+  const calcDuration = (start, end) => {
+    const [sh, sm] = start.split(':').map(Number)
+    const [eh, em] = end.split(':').map(Number)
+    return Math.max(0, (eh * 60 + em - sh * 60 - sm) / 60)
   }
 
   useEffect(() => {
-    if (!attendCourse) { setAttendRecords([]); return }
+    if (!attendCourse) { setAttendStudents([]); setAttendSheet({}); setAttendRecords([]); return }
+    const dur = calcDuration(attendSessionStart, attendSessionEnd)
+    api.get(`/professor/courses/${attendCourse}/students`)
+      .then(r => {
+        setAttendStudents(r.data)
+        const sheet = {}
+        r.data.forEach(s => { sheet[s.student_id] = dur })
+        setAttendSheet(sheet)
+      })
+      .catch(() => { setAttendStudents([]); setAttendSheet({}) })
     setAttendLoading(true)
     api.get(`/professor/attendance/${attendCourse}`)
       .then(r => setAttendRecords(r.data))
       .catch(() => setAttendRecords([]))
       .finally(() => setAttendLoading(false))
   }, [attendCourse])
+
+  const handleSubmitAttendance = async () => {
+    if (!attendCourse || attendStudents.length === 0) return
+    setAttendSaving(true)
+    setAttendError('')
+    setAttendSuccess('')
+    try {
+      const records = Object.entries(attendSheet).map(([student_id, hours_present]) => ({ student_id, hours_present: Number(hours_present) }))
+      await api.post('/professor/attendance/bulk', {
+        course_id: attendCourse,
+        date: attendDate,
+        session_start: attendSessionStart,
+        session_end: attendSessionEnd,
+        records,
+      })
+      const dur = calcDuration(attendSessionStart, attendSessionEnd)
+      setAttendSuccess(`Saved — ${attendDate}, ${attendSessionStart}–${attendSessionEnd} (${dur}h session).`)
+      const r = await api.get(`/professor/attendance/${attendCourse}`)
+      setAttendRecords(r.data)
+    } catch (err) {
+      setAttendError(err.response?.data?.detail || 'Failed to save attendance.')
+    } finally {
+      setAttendSaving(false)
+    }
+  }
 
   const name = localStorage.getItem('name') || 'Professor'
 
@@ -606,91 +650,24 @@ export default function ProfessorDashboard() {
           <div>
             <div className="mb-8">
               <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Assessment</p>
-              <h1 className="text-3xl font-semibold text-white tracking-tight">Record Grade</h1>
-            </div>
-
-            <div className="max-w-md">
-              <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-                <form onSubmit={handleAddGrade} className="flex flex-col gap-4">
-                  <Field label="Course">
-                    <select
-                      required
-                      value={gradeForm.course_id}
-                      onChange={e => setGradeForm(f => ({ ...f, course_id: e.target.value }))}
-                      className="input-base"
-                    >
-                      <option value="">— select course —</option>
-                      {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>)}
-                    </select>
-                  </Field>
-                  <Field label="Student ID">
-                    <input
-                      required
-                      value={gradeForm.student_id}
-                      onChange={e => setGradeForm(f => ({ ...f, student_id: e.target.value }))}
-                      placeholder="Student UUID"
-                      className="input-base"
-                      style={{ fontFamily: "'DM Mono', monospace" }}
-                    />
-                  </Field>
-                  <Field label="Grade (0–100)">
-                    <input
-                      required
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={gradeForm.value}
-                      onChange={e => setGradeForm(f => ({ ...f, value: e.target.value }))}
-                      placeholder="e.g. 87.5"
-                      className="input-base"
-                    />
-                  </Field>
-                  <Field label="Semester">
-                    <input
-                      required
-                      value={gradeForm.semester}
-                      onChange={e => setGradeForm(f => ({ ...f, semester: e.target.value }))}
-                      placeholder="e.g. Fall 2025"
-                      className="input-base"
-                    />
-                  </Field>
-                  {gradeError   && <p className="text-rose-400 text-sm">{gradeError}</p>}
-                  {gradeSuccess && <p className="text-emerald-400 text-sm">{gradeSuccess}</p>}
-                  <button
-                    type="submit"
-                    disabled={gradeSaving}
-                    className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition"
-                  >
-                    {gradeSaving ? 'Saving…' : 'Record Grade'}
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ATTENDANCE */}
-        {tab === 'attendance' && (
-          <div>
-            <div className="mb-8">
-              <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Tracking</p>
-              <h1 className="text-3xl font-semibold text-white tracking-tight">Attendance</h1>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">Grades</h1>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Mark form */}
+              {/* Record form */}
               <div>
-                <h2 className="text-sm font-semibold text-white mb-4">Mark Attendance</h2>
+                <h2 className="text-sm font-semibold text-white mb-4">Record Grade</h2>
                 <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-                  <form onSubmit={handleMarkAttendance} className="flex flex-col gap-4">
+                  <form onSubmit={handleAddGrade} className="flex flex-col gap-4">
                     <Field label="Course">
                       <select
                         required
-                        value={attendForm.course_id}
+                        value={gradeForm.course_id}
                         onChange={e => {
-                          setAttendForm(f => ({ ...f, course_id: e.target.value }))
-                          setAttendCourse(e.target.value)
+                          const id = e.target.value
+                          setGradeForm(f => ({ ...f, course_id: id, student_id: '' }))
+                          setGradeStudents([])
+                          if (id) api.get(`/professor/courses/${id}/students`).then(r => setGradeStudents(r.data)).catch(() => {})
                         }}
                         className="input-base"
                       >
@@ -698,92 +675,316 @@ export default function ProfessorDashboard() {
                         {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>)}
                       </select>
                     </Field>
-                    <Field label="Student ID">
-                      <input
-                        required
-                        value={attendForm.student_id}
-                        onChange={e => setAttendForm(f => ({ ...f, student_id: e.target.value }))}
-                        placeholder="Student UUID"
-                        className="input-base"
-                        style={{ fontFamily: "'DM Mono', monospace" }}
-                      />
-                    </Field>
-                    <Field label="Date">
-                      <input
-                        required
-                        type="date"
-                        value={attendForm.date}
-                        onChange={e => setAttendForm(f => ({ ...f, date: e.target.value }))}
-                        className="input-base"
-                      />
-                    </Field>
-                    <Field label="Status">
+                    <Field label="Student">
                       <select
-                        value={attendForm.status}
-                        onChange={e => setAttendForm(f => ({ ...f, status: e.target.value }))}
+                        required
+                        value={gradeForm.student_id}
+                        onChange={e => setGradeForm(f => ({ ...f, student_id: e.target.value }))}
                         className="input-base"
+                        disabled={!gradeForm.course_id}
                       >
-                        <option value="present">Present</option>
-                        <option value="absent">Absent</option>
-                        <option value="late">Late</option>
+                        <option value="">— select student —</option>
+                        {gradeStudents.map(s => <option key={s.student_id} value={s.student_id}>{s.name} ({s.email})</option>)}
                       </select>
                     </Field>
-                    {attendError   && <p className="text-rose-400 text-sm">{attendError}</p>}
-                    {attendSuccess && <p className="text-emerald-400 text-sm">{attendSuccess}</p>}
+                    <Field label="Grade (0–100)">
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={gradeForm.value}
+                        onChange={e => setGradeForm(f => ({ ...f, value: e.target.value }))}
+                        placeholder="e.g. 87.5"
+                        className="input-base"
+                      />
+                    </Field>
+                    <Field label="Semester">
+                      <input
+                        required
+                        value={gradeForm.semester}
+                        onChange={e => setGradeForm(f => ({ ...f, semester: e.target.value }))}
+                        placeholder="e.g. Fall 2025"
+                        className="input-base"
+                      />
+                    </Field>
+                    <Field label="Grade Type">
+                      <select
+                        required
+                        value={gradeForm.grade_type}
+                        onChange={e => setGradeForm(f => ({ ...f, grade_type: e.target.value }))}
+                        className="input-base"
+                      >
+                        <option value="">— select type —</option>
+                        <option value="midterm">Midterm</option>
+                        <option value="final">Final</option>
+                        <option value="assignment">Assignment</option>
+                        <option value="quiz">Quiz</option>
+                      </select>
+                    </Field>
+                    <Field label="Weight (% of overall grade)">
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        value={gradeForm.weight}
+                        onChange={e => setGradeForm(f => ({ ...f, weight: e.target.value }))}
+                        placeholder="e.g. 30"
+                        className="input-base"
+                      />
+                    </Field>
+                    {gradeError   && <p className="text-rose-400 text-sm">{gradeError}</p>}
+                    {gradeSuccess && <p className="text-emerald-400 text-sm">{gradeSuccess}</p>}
                     <button
                       type="submit"
-                      disabled={attendSaving}
+                      disabled={gradeSaving}
                       className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition"
                     >
-                      {attendSaving ? 'Saving…' : 'Mark Attendance'}
+                      {gradeSaving ? 'Saving…' : 'Record Grade'}
                     </button>
                   </form>
                 </div>
               </div>
 
-              {/* Records */}
+              {/* Grades list */}
               <div>
-                <h2 className="text-sm font-semibold text-white mb-4">
-                  {attendCourse ? 'Attendance Records' : 'Select a course to view records'}
-                </h2>
-                {attendCourse && (
-                  attendLoading ? (
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
-                  ) : attendRecords.length === 0 ? (
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No records yet.</div>
-                  ) : (
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b border-slate-800">
-                            {['Student ID', 'Date', 'Status'].map(h => (
-                              <th key={h} className="text-left px-4 py-3 text-slate-500 font-medium text-xs uppercase tracking-widest">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {attendRecords.map((r, i) => (
-                            <tr key={r.id || i} className={`hover:bg-slate-950/40 transition-colors ${i < attendRecords.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
-                              <td className="px-4 py-3 text-slate-400 text-xs truncate max-w-[140px]" style={{ fontFamily: "'DM Mono', monospace" }}>{r.student_id}</td>
-                              <td className="px-4 py-3 text-slate-400 text-xs">{r.date}</td>
-                              <td className="px-4 py-3">
-                                <span className={`text-xs font-medium px-2 py-0.5 rounded capitalize ${
-                                  r.status === 'present' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30' :
-                                  r.status === 'absent'  ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30' :
-                                                           'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                                }`}>{r.status}</span>
-                              </td>
-                            </tr>
+                <h2 className="text-sm font-semibold text-white mb-4">View Grades</h2>
+                <div className="mb-4">
+                  <select
+                    value={gradeViewCourse}
+                    onChange={e => setGradeViewCourse(e.target.value)}
+                    className="input-base"
+                  >
+                    <option value="">— select course —</option>
+                    {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>)}
+                  </select>
+                </div>
+                {!gradeViewCourse ? (
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Select a course to view grades.</div>
+                ) : gradesLoading ? (
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
+                ) : grades.length === 0 ? (
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No grades recorded for this course.</div>
+                ) : (
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-slate-800">
+                          {['Student', 'Type', 'Grade', 'Weight', 'Semester'].map(h => (
+                            <th key={h} className="text-left px-4 py-3 text-slate-500 font-medium text-xs uppercase tracking-widest">{h}</th>
                           ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {grades.map((g, i) => (
+                          <tr key={g.id || i} className={`hover:bg-slate-950/40 transition-colors ${i < grades.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                            <td className="px-4 py-3">
+                              <p className="text-white text-sm font-medium">{g.student_name || '—'}</p>
+                              <p className="text-slate-500 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{g.student_email || '—'}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="text-xs font-medium px-2 py-0.5 rounded capitalize bg-blue-300/15 text-blue-300 border border-blue-400/30">{g.grade_type}</span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className={`text-sm font-semibold ${g.value >= 90 ? 'text-emerald-400' : g.value >= 70 ? 'text-amber-400' : 'text-rose-400'}`}>
+                                {g.value}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-slate-400 text-xs">{g.weight}%</td>
+                            <td className="px-4 py-3 text-slate-400 text-xs">{g.semester}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </div>
             </div>
           </div>
         )}
+
+        {/* ATTENDANCE */}
+        {tab === 'attendance' && (() => {
+          const sessionDuration = calcDuration(attendSessionStart, attendSessionEnd)
+
+          // Aggregate per-student stats from past records
+          const statsMap = {}
+          attendRecords.forEach(r => {
+            if (!statsMap[r.student_id]) {
+              statsMap[r.student_id] = { student_name: r.student_name, student_email: r.student_email, hours_present: 0, hours_possible: 0, sessions: [] }
+            }
+            const dur = (r.session_start && r.session_end) ? calcDuration(r.session_start, r.session_end) : 0
+            statsMap[r.student_id].hours_present += r.hours_present || 0
+            statsMap[r.student_id].hours_possible += dur
+            statsMap[r.student_id].sessions.push(r)
+          })
+          const studentStats = Object.values(statsMap)
+
+          return (
+            <div>
+              <div className="mb-8">
+                <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Tracking</p>
+                <h1 className="text-3xl font-semibold text-white tracking-tight">Attendance</h1>
+              </div>
+
+              {/* Session controls */}
+              <div className="flex flex-wrap gap-4 mb-8 p-5 bg-slate-800 border border-slate-700 rounded-xl">
+                <div className="flex-1 min-w-[200px]">
+                  <label className="text-slate-400 text-xs font-medium uppercase tracking-wider block mb-2">Course</label>
+                  <select
+                    value={attendCourse}
+                    onChange={e => { setAttendCourse(e.target.value); setAttendError(''); setAttendSuccess('') }}
+                    className="input-base"
+                  >
+                    <option value="">— select course —</option>
+                    {courses.map(c => <option key={c.id} value={c.id}>{c.code} — {c.title}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-slate-400 text-xs font-medium uppercase tracking-wider block mb-2">Date</label>
+                  <input type="date" value={attendDate} onChange={e => setAttendDate(e.target.value)} className="input-base w-40" />
+                </div>
+                <div>
+                  <label className="text-slate-400 text-xs font-medium uppercase tracking-wider block mb-2">Start Time</label>
+                  <input type="time" value={attendSessionStart} onChange={e => setAttendSessionStart(e.target.value)} className="input-base w-32" />
+                </div>
+                <div>
+                  <label className="text-slate-400 text-xs font-medium uppercase tracking-wider block mb-2">End Time</label>
+                  <input type="time" value={attendSessionEnd} onChange={e => setAttendSessionEnd(e.target.value)} className="input-base w-32" />
+                </div>
+                {sessionDuration > 0 && (
+                  <div className="flex items-end pb-0.5">
+                    <span className="text-amber-400 text-sm font-semibold bg-amber-500/10 border border-amber-500/20 px-3 py-2 rounded-lg">
+                      {sessionDuration}h session
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {!attendCourse ? (
+                <EmptyState message="Select a course to take attendance." />
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                  {/* Attendance sheet */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-sm font-semibold text-white">
+                        Mark Attendance — {attendDate}, {attendSessionStart}–{attendSessionEnd}
+                      </h2>
+                      {attendStudents.length > 0 && (
+                        <div className="flex gap-2">
+                          <button onClick={() => setAttendSheet(s => Object.fromEntries(Object.keys(s).map(id => [id, sessionDuration])))} className="text-xs text-emerald-400 hover:text-emerald-300 transition">All Present</button>
+                          <span className="text-slate-700">|</span>
+                          <button onClick={() => setAttendSheet(s => Object.fromEntries(Object.keys(s).map(id => [id, 0])))} className="text-xs text-rose-400 hover:text-rose-300 transition">All Absent</button>
+                        </div>
+                      )}
+                    </div>
+
+                    {attendStudents.length === 0 ? (
+                      <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No students enrolled.</div>
+                    ) : (
+                      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                        {attendStudents.map((s, i) => {
+                          const hp = attendSheet[s.student_id] ?? sessionDuration
+                          const pct = sessionDuration > 0 ? hp / sessionDuration : 0
+                          const color = pct >= 1 ? 'text-emerald-400' : pct === 0 ? 'text-rose-400' : 'text-amber-400'
+                          const borderColor = pct >= 1 ? 'border-emerald-600' : pct === 0 ? 'border-rose-600' : 'border-amber-600'
+                          return (
+                            <div key={s.student_id} className={`flex items-center gap-3 px-5 py-3.5 ${i < attendStudents.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-white text-sm font-medium truncate">{s.name}</p>
+                                <p className="text-slate-500 text-xs truncate">{s.email}</p>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <button
+                                  onClick={() => setAttendSheet(sh => ({ ...sh, [s.student_id]: Math.max(0, (sh[s.student_id] ?? sessionDuration) - 0.5) }))}
+                                  className="w-7 h-7 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold transition flex items-center justify-center"
+                                >−</button>
+                                <div className={`flex flex-col items-center w-16 border-b-2 ${borderColor} pb-0.5`}>
+                                  <span className={`text-lg font-semibold ${color}`}>{hp}</span>
+                                  <span className="text-slate-500 text-xs">/ {sessionDuration}h</span>
+                                </div>
+                                <button
+                                  onClick={() => setAttendSheet(sh => ({ ...sh, [s.student_id]: Math.min(sessionDuration, (sh[s.student_id] ?? sessionDuration) + 0.5) }))}
+                                  className="w-7 h-7 rounded bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-bold transition flex items-center justify-center"
+                                >+</button>
+                              </div>
+                            </div>
+                          )
+                        })}
+                        <div className="px-5 py-4 border-t border-slate-700 bg-slate-900/50">
+                          <div className="flex items-center justify-between gap-4 flex-wrap">
+                            <div className="flex gap-4 text-xs text-slate-500">
+                              <span><span className="text-emerald-400 font-semibold">{Object.values(attendSheet).filter(v => v >= sessionDuration && sessionDuration > 0).length}</span> full</span>
+                              <span><span className="text-amber-400 font-semibold">{Object.values(attendSheet).filter(v => v > 0 && v < sessionDuration).length}</span> partial</span>
+                              <span><span className="text-rose-400 font-semibold">{Object.values(attendSheet).filter(v => v === 0).length}</span> absent</span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1">
+                              {attendError   && <p className="text-rose-400 text-xs">{attendError}</p>}
+                              {attendSuccess && <p className="text-emerald-400 text-xs">{attendSuccess}</p>}
+                              <button
+                                onClick={handleSubmitAttendance}
+                                disabled={attendSaving || sessionDuration <= 0}
+                                className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-medium px-5 py-2 rounded-lg transition"
+                              >
+                                {attendSaving ? 'Saving…' : 'Save Session'}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Attendance rate summary */}
+                  <div>
+                    <h2 className="text-sm font-semibold text-white mb-4">Attendance Rates <span className="text-slate-500 font-normal">(75% to pass)</span></h2>
+                    {attendLoading ? (
+                      <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
+                    ) : studentStats.length === 0 ? (
+                      <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No records yet. Save a session to see rates.</div>
+                    ) : (
+                      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                        {studentStats.map((s, i) => {
+                          const rate = s.hours_possible > 0 ? (s.hours_present / s.hours_possible) * 100 : 0
+                          const pass = rate >= 75
+                          return (
+                            <div key={s.student_email} className={`px-5 py-4 ${i < studentStats.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="min-w-0">
+                                  <p className="text-white text-sm font-medium truncate">{s.student_name}</p>
+                                  <p className="text-slate-500 text-xs truncate">{s.student_email}</p>
+                                </div>
+                                <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                                  <span className="text-slate-400 text-xs">{s.hours_present}/{s.hours_possible}h</span>
+                                  <span className={`text-sm font-semibold w-12 text-right ${pass ? 'text-emerald-400' : 'text-rose-400'}`}>{rate.toFixed(0)}%</span>
+                                  <span className={`text-xs font-medium px-2 py-0.5 rounded border ${pass ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'}`}>
+                                    {pass ? 'Pass' : 'Fail'}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="w-full bg-slate-700 rounded-full h-1.5">
+                                <div
+                                  className={`h-1.5 rounded-full transition-all ${pass ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                                  style={{ width: `${Math.min(100, rate)}%` }}
+                                />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
       </main>
 
