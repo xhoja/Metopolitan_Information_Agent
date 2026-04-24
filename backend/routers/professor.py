@@ -161,13 +161,31 @@ def mark_attendance_bulk(data: AttendanceBulkInput, authorization: str = Header(
     return res.data
 
 @router.post("/assignments")
-def create_assignment(data: AssignmentCreate, authorization: str = Header(...)):
+async def create_assignment(
+    title: str = Form(...),
+    course_id: str = Form(...),
+    type: str = Form(...),
+    description: Optional[str] = Form(None),
+    due_date: Optional[str] = Form(None),
+    file: Optional[UploadFile] = File(None),
+    authorization: str = Header(...),
+):
+    file_url = None
+    file_name = None
+    if file and file.filename:
+        file_bytes = await file.read()
+        stored_name = f"{uuid.uuid4()}_{file.filename}"
+        supabase.storage.from_("materials").upload(stored_name, file_bytes, {"content-type": file.content_type})
+        file_url = supabase.storage.from_("materials").get_public_url(stored_name)
+        file_name = file.filename
     res = supabase.table("assignments").insert({
-        "title": data.title,
-        "description": data.description,
-        "due_date": data.due_date,
-        "course_id": data.course_id,
-        "type": data.type
+        "title": title,
+        "description": description,
+        "due_date": due_date,
+        "course_id": course_id,
+        "type": type,
+        "file_url": file_url,
+        "file_name": file_name,
     }).execute()
     return res.data[0]
 
@@ -175,6 +193,11 @@ def create_assignment(data: AssignmentCreate, authorization: str = Header(...)):
 def get_assignments(course_id: str, authorization: str = Header(...)):
     res = supabase.table("assignments").select("*").eq("course_id", course_id).execute()
     return res.data
+
+@router.delete("/assignments/{assignment_id}")
+def delete_assignment(assignment_id: str, authorization: str = Header(...)):
+    supabase.table("assignments").delete().eq("id", assignment_id).execute()
+    return {"ok": True}
 
 @router.get("/courses/{course_id}/students")
 def get_course_students(course_id: str, authorization: str = Header(...)):

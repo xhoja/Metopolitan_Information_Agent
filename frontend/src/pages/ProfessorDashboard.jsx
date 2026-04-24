@@ -54,6 +54,7 @@ export default function ProfessorDashboard() {
   const [assignForm, setAssignForm]               = useState(EMPTY_ASSIGNMENT)
   const [assignSaving, setAssignSaving]           = useState(false)
   const [assignError, setAssignError]             = useState('')
+  const [assignFile, setAssignFile]               = useState(null)
 
   // grades tab
   const [gradeForm, setGradeForm]         = useState(EMPTY_GRADE)
@@ -166,15 +167,33 @@ export default function ProfessorDashboard() {
     }
   }
 
+  const handleDeleteAssignment = async (id) => {
+    if (!window.confirm('Delete this assignment?')) return
+    try {
+      await api.delete(`/professor/assignments/${id}`)
+      setAssignments(a => a.filter(x => x.id !== id))
+    } catch {
+      alert('Failed to delete assignment.')
+    }
+  }
+
   const handleCreateAssignment = async (e) => {
     e.preventDefault()
     setAssignSaving(true)
     setAssignError('')
     try {
-      const res = await api.post('/professor/assignments', assignForm)
+      const fd = new FormData()
+      fd.append('title', assignForm.title)
+      fd.append('course_id', assignForm.course_id)
+      fd.append('type', assignForm.type)
+      if (assignForm.description) fd.append('description', assignForm.description)
+      if (assignForm.due_date) fd.append('due_date', assignForm.due_date)
+      if (assignFile) fd.append('file', assignFile)
+      const res = await api.post('/professor/assignments', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       setAssignments(a => [...a, res.data])
       setAssignModal(false)
       setAssignForm({ ...EMPTY_ASSIGNMENT, course_id: selectedCourse })
+      setAssignFile(null)
     } catch (err) {
       setAssignError(err.response?.data?.detail || 'Failed to create assignment.')
     } finally {
@@ -618,7 +637,7 @@ export default function ProfessorDashboard() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-800">
-                      {['Title', 'Type', 'Due Date', 'Description'].map(h => (
+                      {['Title', 'Type', 'Due Date', 'Description', 'File', ''].map(h => (
                         <th key={h} className="text-left px-6 py-4 text-slate-500 font-medium text-xs uppercase tracking-widest">{h}</th>
                       ))}
                     </tr>
@@ -636,6 +655,16 @@ export default function ProfessorDashboard() {
                           {a.due_date ? new Date(a.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                         </td>
                         <td className="px-6 py-4 text-slate-400 text-sm max-w-xs truncate">{a.description || '—'}</td>
+                        <td className="px-6 py-4">
+                          {a.file_url
+                            ? <a href={a.file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-400 hover:text-amber-300 underline truncate block max-w-[140px]">{a.file_name || 'Download'}</a>
+                            : <span className="text-slate-600">—</span>}
+                        </td>
+                        <td className="px-6 py-4">
+                          <button onClick={() => handleDeleteAssignment(a.id)} className="text-slate-500 hover:text-rose-400 transition-colors" title="Delete">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1020,7 +1049,7 @@ export default function ProfessorDashboard() {
 
       {/* Create Assignment Modal */}
       {assignModal && (
-        <Modal title="New Assignment" onClose={() => setAssignModal(false)}>
+        <Modal title="New Assignment" onClose={() => { setAssignModal(false); setAssignFile(null) }}>
           <form onSubmit={handleCreateAssignment} className="flex flex-col gap-4">
             <Field label="Title">
               <input required value={assignForm.title} onChange={e => setAssignForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Midterm Project" className="input-base" />
@@ -1040,9 +1069,16 @@ export default function ProfessorDashboard() {
             <Field label="Description">
               <textarea value={assignForm.description} onChange={e => setAssignForm(f => ({ ...f, description: e.target.value }))} placeholder="Instructions…" rows={3} className="input-base resize-none" />
             </Field>
+            <Field label="Attachment (PDF / DOC / DOCX — optional)">
+              <label className="flex items-center gap-3 cursor-pointer w-full border border-dashed border-slate-600 hover:border-amber-600 rounded-lg px-4 py-3 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 8l-3-3m3 3l3-3" /></svg>
+                <span className="text-sm text-slate-400 truncate">{assignFile ? assignFile.name : 'Click to upload file'}</span>
+                <input type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={e => setAssignFile(e.target.files[0] || null)} />
+              </label>
+            </Field>
             {assignError && <p className="text-rose-400 text-sm">{assignError}</p>}
             <div className="flex gap-3 pt-1">
-              <button type="button" onClick={() => setAssignModal(false)} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium py-2.5 rounded-lg transition">Cancel</button>
+              <button type="button" onClick={() => { setAssignModal(false); setAssignFile(null) }} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium py-2.5 rounded-lg transition">Cancel</button>
               <button type="submit" disabled={assignSaving} className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition">
                 {assignSaving ? 'Creating…' : 'Create Assignment'}
               </button>
