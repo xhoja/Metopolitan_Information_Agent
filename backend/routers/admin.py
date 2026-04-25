@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header
 from schemas.auth import UserCreate, UserUpdate
+from pydantic import BaseModel
+from models import UserCreate
 from db import supabase
 from routers.auth import hash_password, decode_token
 import datetime
@@ -8,6 +10,12 @@ router = APIRouter()
 
 
 def require_admin(token: str) -> dict:
+class EnrollmentCreate(BaseModel):
+    student_id: str
+    course_id: str
+    semester: str
+
+def require_admin(token: str):
     payload = decode_token(token)
     if payload.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin only")
@@ -91,6 +99,19 @@ def get_stats(authorization: str = Header(...)):
 
 
 # ── Courses ────────────────────────────────────────────────────────────────
+@router.get("/students")
+def get_all_students(authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    rows = supabase.table("students").select("id, user_id, users(name, email)").execute().data
+    result = []
+    for s in rows:
+        result.append({
+            "id": s["id"],
+            "name": s["users"]["name"] if s.get("users") else "",
+            "email": s["users"]["email"] if s.get("users") else "",
+        })
+    return result
 
 @router.get("/courses")
 def get_all_courses(authorization: str = Header(...)):
@@ -121,6 +142,19 @@ def get_all_courses(authorization: str = Header(...)):
 
 
 # ── Enrollments ────────────────────────────────────────────────────────────
+@router.post("/enrollments")
+def create_enrollment(data: EnrollmentCreate, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    existing = supabase.table("enrollments").select("id").eq("student_id", data.student_id).eq("course_id", data.course_id).execute()
+    if existing.data:
+        raise HTTPException(status_code=400, detail="Student already enrolled in this course")
+    res = supabase.table("enrollments").insert({
+        "student_id": data.student_id,
+        "course_id": data.course_id,
+        "semester": data.semester
+    }).execute()
+    return res.data[0]
 
 @router.get("/enrollments")
 def get_all_enrollments(authorization: str = Header(...)):
@@ -129,6 +163,7 @@ def get_all_enrollments(authorization: str = Header(...)):
     enrollments = supabase.table("enrollments").select(
         "id, enrolled_at, students(user_id, users(name)), courses(title, code)"
     ).execute().data
+    enrollments = supabase.table("enrollments").select("id, created_at, students(user_id, users(name)), courses(title, code)").execute().data
     result = []
     for e in enrollments:
         try:
@@ -152,6 +187,16 @@ def get_all_enrollments(authorization: str = Header(...)):
 
 
 # ── Attendance ─────────────────────────────────────────────────────────────
+            "created_at": e.get("created_at")
+        })
+    return result
+
+@router.delete("/enrollments/{enrollment_id}")
+def delete_enrollment(enrollment_id: str, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    require_admin(token)
+    supabase.table("enrollments").delete().eq("id", enrollment_id).execute()
+    return {"message": "Enrollment deleted"}
 
 @router.get("/attendance")
 def get_all_attendance(authorization: str = Header(...)):

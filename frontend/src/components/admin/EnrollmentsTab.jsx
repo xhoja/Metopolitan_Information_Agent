@@ -3,16 +3,47 @@ import api from '../../api/axios'
 
 export default function EnrollmentsTab() {
   const [enrollments, setEnrollments] = useState([])
+  const [students, setStudents]       = useState([])
+  const [courses, setCourses]         = useState([])
   const [loading, setLoading]         = useState(true)
   const [error, setError]             = useState('')
   const [search, setSearch]           = useState('')
 
-  useEffect(() => {
+  const [form, setForm]         = useState({ student_id: '', course_id: '', semester: '' })
+  const [saving, setSaving]     = useState(false)
+  const [formError, setFormError]   = useState('')
+  const [formSuccess, setFormSuccess] = useState('')
+
+  const load = () => {
+    setLoading(true)
     api.get('/admin/enrollments')
       .then(r => setEnrollments(r.data))
-      .catch(() => setError('Endpoint not available yet.'))
+      .catch(() => setError('Failed to load enrollments.'))
       .finally(() => setLoading(false))
+  }
+
+  useEffect(() => {
+    load()
+    api.get('/admin/students').then(r => setStudents(r.data)).catch(() => {})
+    api.get('/admin/courses').then(r => setCourses(r.data)).catch(() => {})
   }, [])
+
+  const handleEnroll = async (e) => {
+    e.preventDefault()
+    setSaving(true)
+    setFormError('')
+    setFormSuccess('')
+    try {
+      await api.post('/admin/enrollments', form)
+      setFormSuccess('Student enrolled successfully.')
+      setForm({ student_id: '', course_id: '', semester: '' })
+      load()
+    } catch (err) {
+      setFormError(err.response?.data?.detail || 'Failed to enroll student.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   const filtered = enrollments.filter(e =>
     e.student_name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -30,6 +61,61 @@ export default function EnrollmentsTab() {
         )}
       </div>
 
+      <div className="max-w-md mb-8">
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+          <h2 className="text-sm font-semibold text-white mb-4">Enroll Student</h2>
+          <form onSubmit={handleEnroll} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-widest">Student</label>
+              <select
+                required
+                value={form.student_id}
+                onChange={e => setForm(f => ({ ...f, student_id: e.target.value }))}
+                className="input-base"
+              >
+                <option value="">— select student —</option>
+                {students.map(s => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.email})</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-widest">Course</label>
+              <select
+                required
+                value={form.course_id}
+                onChange={e => setForm(f => ({ ...f, course_id: e.target.value }))}
+                className="input-base"
+              >
+                <option value="">— select course —</option>
+                {courses.map(c => (
+                  <option key={c.id} value={c.id}>{c.code} — {c.title}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-medium text-slate-400 uppercase tracking-widest">Semester</label>
+              <input
+                required
+                value={form.semester}
+                onChange={e => setForm(f => ({ ...f, semester: e.target.value }))}
+                placeholder="e.g. Fall 2025"
+                className="input-base"
+              />
+            </div>
+            {formError   && <p className="text-rose-400 text-sm">{formError}</p>}
+            {formSuccess && <p className="text-emerald-400 text-sm">{formSuccess}</p>}
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition"
+            >
+              {saving ? 'Enrolling…' : 'Enroll Student'}
+            </button>
+          </form>
+        </div>
+      </div>
+
       <div className="mb-5">
         <input
           value={search}
@@ -43,7 +129,7 @@ export default function EnrollmentsTab() {
         {loading ? (
           <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading…</div>
         ) : error ? (
-          <PendingEndpoint endpoint="GET /admin/enrollments" />
+          <div className="flex items-center justify-center py-24 text-rose-400 text-sm">{error}</div>
         ) : filtered.length === 0 ? (
           <div className="flex items-center justify-center py-24 text-slate-500 text-sm">
             {search ? 'No enrollments match your search.' : 'No enrollments yet.'}
@@ -52,7 +138,7 @@ export default function EnrollmentsTab() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-800">
-                {['Student', 'Course', 'Code', 'Enrolled On'].map(h => (
+                {['Student', 'Course', 'Code', 'Enrolled On', ''].map(h => (
                   <th key={h} className="text-left px-6 py-4 text-slate-500 font-medium text-xs uppercase tracking-widest">{h}</th>
                 ))}
               </tr>
@@ -70,26 +156,23 @@ export default function EnrollmentsTab() {
                   <td className="px-6 py-4 text-slate-500 text-xs">
                     {e.created_at ? new Date(e.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                   </td>
+                  <td className="px-6 py-4">
+                    <button
+                      onClick={() => {
+                        if (!window.confirm(`Remove ${e.student_name} from ${e.course_title}?`)) return
+                        api.delete(`/admin/enrollments/${e.id}`).then(load).catch(() => {})
+                      }}
+                      className="text-rose-400 hover:text-rose-300 text-xs font-medium transition"
+                    >
+                      Remove
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
-    </div>
-  )
-}
-
-function PendingEndpoint({ endpoint }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-24 gap-3">
-      <div className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center">
-        <svg className="w-5 h-5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <p className="text-slate-400 text-sm font-medium">Awaiting backend endpoint</p>
-      <code className="text-xs text-slate-500 bg-slate-800 border border-slate-700 px-3 py-1.5 rounded font-mono">{endpoint}</code>
     </div>
   )
 }

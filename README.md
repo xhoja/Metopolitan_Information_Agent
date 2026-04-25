@@ -257,18 +257,18 @@ mia-university/
 
 | Feature | Admin | Professor | Student |
 |---|:---:|:---:|:---:|
-| Create / manage users | ✅ | ❌ | ❌ |
-| Assign roles | ✅ | ❌ | ❌ |
-| View all system data | ✅ | ❌ | ❌ |
-| Manage courses | ✅ | ✅ | ❌ |
-| Upload grades | ✅ | ✅ | ❌ |
-| Manage attendance | ✅ | ✅ | ❌ |
-| Create assignments | ✅ | ✅ | ❌ |
-| View own grades & GPA | ❌ | ❌ | ✅ |
-| View transcript | ❌ | ❌ | ✅ |
-| View own attendance | ❌ | ❌ | ✅ |
-| Submit assignments | ❌ | ❌ | ✅ |
-| Access M.I.A AI Adviser | ❌ | ❌ | ✅ |
+| Create / manage users | yes | no | no|
+| Assign roles | yes | no | no |
+| View all system data | yes | no | no |
+| Manage courses | yes| yes| no |
+| Upload grades | yes| yes | no |
+| Manage attendance | yes | yes | no |
+| Create assignments | yes | yes | no |
+| View own grades & GPA | no | no | yes |
+| View transcript | no | no | yes |
+| View own attendance | no | no | yes |
+| Submit assignments | no | no | yes |
+| Access M.I.A AI Adviser | no | no | yes |
 
 ---
 
