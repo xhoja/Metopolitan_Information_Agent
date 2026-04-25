@@ -6,6 +6,7 @@ import datetime
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None  # omit to start a new session
+    # authorization header is automatically included by the HTTP client
 
 
 class ChatResponse(BaseModel):
