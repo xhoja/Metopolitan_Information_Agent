@@ -18,7 +18,7 @@ M.I.A is a web-based university management system designed to centralise academi
 Metropolitan University of Tirana is a higher education institution offering undergraduate and postgraduate programmes across multiple academic departments. It employs professors who deliver courses and assess student progress, and serves students who need to manage their academic records, assignments, and graduation requirements.
 
 ### Why they want the app
-The university lacks a unified digital platform for academic management. Professors currently juggle disconnected tools to handle courses, grades, and attendance, while students have no self-service way to monitor their progress or get academic guidance without booking adviser appointments. The client wants a single web application that gives each role — admin, professor, and student — a tailored portal to manage and track all academic work in one place.
+The university lacks a unified digital platform for academic management. Professors currently juggle disconnected tools to handle courses, grades, and attendance, while students have no self-service way to monitor their progress or get academic guidance without booking adviser appointments. The client wants a single web application that gives each role,this includes admin, professor, and student,a tailored portal to manage and track all academic work in one place.
 
 ---
 
