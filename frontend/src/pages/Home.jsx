@@ -92,7 +92,7 @@ export default function Home() {
           <p className="text-slate-400 leading-relaxed max-w-2xl mx-auto">
             University Metropolitan Tirana is Albania's premier higher education institution focused on engineering,
             architecture, economics, and technology. The first university in Albania to offer a PhD in Artificial
-            Intelligence — rated <span className="text-blue-300 font-medium">Excellent</span> by the British
+            Intelligence, rated <span className="text-blue-300 font-medium">Excellent</span> by the British
             Accreditation Agency for 5 consecutive years.
           </p>
         </div>
