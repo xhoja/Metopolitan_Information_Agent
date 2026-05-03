@@ -4,8 +4,6 @@
 
 ---
 
-<<<<<<< Updated upstream
-=======
 ## Week 5 — 2026-04-29
 
 [I update the chatbox, now the student preferences are taken into account.]
@@ -13,7 +11,6 @@
 
 ---
 
->>>>>>> Stashed changes
 ## Week 4 — 2026-04-22
 
 [I update the chatbox now the agent have acces to the personnals informations of the student who use it.]
@@ -28,21 +25,13 @@
 
 ## Week 2 — 2026-04-08
 
-<<<<<<< Updated upstream
-
-=======
 [We discuss about the project, how it will be (his aspect, his features...) and we repart the task between backend, frontend and agents, i choose to work on the agents. We also discuss about the technical stuff. ]
->>>>>>> Stashed changes
 
 ---
 
 ## Week 1 — 2026-04-01
 
-<<<<<<< Updated upstream
-
-=======
 [we discuss with my group about the subject of the project, after talking with the proffesor we select the subject AcademiQ ( Ai-powered academic adviser) we also discuss about the technical stuff we will use and how we will share the tasks. ]
->>>>>>> Stashed changes
 
 ---
 
