@@ -3,6 +3,7 @@ import DashboardNav from "../components/DashboardNav";
 import { studentService, miaService } from "../api/studentService";
 
 const tabs = [
+  { id: "overview", label: "Overview" },
   { id: "courses", label: "My Courses" },
   { id: "grades", label: "Grades & GPA" },
   { id: "attendance", label: "Attendance" },
@@ -12,7 +13,7 @@ const tabs = [
 ];
 
 export default function StudentDashboard() {
-  const [activeTab, setActiveTab] = useState("courses");
+  const [activeTab, setActiveTab] = useState("overview");
 
   const [courses, setCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
@@ -108,6 +109,165 @@ export default function StudentDashboard() {
 
   const renderTabContent = () => {
     switch (activeTab) {
+      case "overview":
+        return (
+          <div>
+            <div className="mb-10">
+              <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">
+                Welcome back
+              </p>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">
+                {localStorage.getItem("name") || "Student"}
+              </h1>
+              <p className="text-slate-500 text-sm mt-1">
+                Here's your academic snapshot.
+              </p>
+            </div>
+
+            {coursesLoading ||
+            gradesLoading ||
+            attendanceLoading ||
+            assignmentsLoading ? (
+              <p className="text-slate-500 text-sm">Loading overview…</p>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+                  <StatCard
+                    label="Enrolled Courses"
+                    value={courses.length}
+                    color="text-amber-400"
+                  />
+                  <StatCard
+                    label="Current GPA"
+                    value={
+                      grades.length > 0
+                        ? (
+                            grades.reduce((sum, g) => sum + g.grade, 0) /
+                            grades.length
+                          ).toFixed(2)
+                        : "N/A"
+                    }
+                    color="text-blue-300"
+                  />
+                  <StatCard
+                    label="Assignments"
+                    value={assignments.length}
+                    color="text-emerald-400"
+                  />
+                  <StatCard
+                    label="Attendance Rate"
+                    value={
+                      attendance.length > 0
+                        ? Math.round(
+                            (attendance.filter((a) => a.present).length /
+                              attendance.length) *
+                              100,
+                          ) + "%"
+                        : "N/A"
+                    }
+                    color="text-purple-400"
+                  />
+                </div>
+
+                <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden mb-6">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+                    <h2 className="text-sm font-semibold text-white">
+                      My Courses
+                    </h2>
+                    <button
+                      onClick={() => setActiveTab("courses")}
+                      className="text-amber-400 hover:text-amber-300 text-xs transition"
+                    >
+                      View all →
+                    </button>
+                  </div>
+                  {courses.length === 0 ? (
+                    <div className="px-6 py-12 text-center text-slate-500 text-sm">
+                      No courses enrolled yet.
+                    </div>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {courses.slice(0, 3).map((enrollment, i) => (
+                          <tr
+                            key={enrollment.id}
+                            className={`hover:bg-slate-950/40 transition-colors ${i < courses.slice(0, 3).length - 1 ? "border-b border-slate-800/60" : ""}`}
+                          >
+                            <td className="px-6 py-3.5 font-medium text-white">
+                              {enrollment.courses?.title}
+                            </td>
+                            <td
+                              className="px-6 py-3.5 text-slate-400 text-xs"
+                              style={{ fontFamily: "'DM Mono', monospace" }}
+                            >
+                              {enrollment.courses?.code}
+                            </td>
+                            <td className="px-6 py-3.5 text-slate-500 text-xs">
+                              {enrollment.courses?.credits} credits
+                            </td>
+                            <td className="px-6 py-3.5 text-right">
+                              <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                                Enrolled
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+                    <h2 className="text-sm font-semibold text-white">
+                      Recent Assignments
+                    </h2>
+                    <button
+                      onClick={() => setActiveTab("assignments")}
+                      className="text-amber-400 hover:text-amber-300 text-xs transition"
+                    >
+                      View all →
+                    </button>
+                  </div>
+                  {assignments.length === 0 ? (
+                    <div className="px-6 py-12 text-center text-slate-500 text-sm">
+                      No assignments found.
+                    </div>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <tbody>
+                        {assignments.slice(0, 3).map((assignment, i) => (
+                          <tr
+                            key={assignment.id}
+                            className={`hover:bg-slate-950/40 transition-colors ${i < assignments.slice(0, 3).length - 1 ? "border-b border-slate-800/60" : ""}`}
+                          >
+                            <td className="px-6 py-3.5 font-medium text-white">
+                              {assignment.title}
+                            </td>
+                            <td className="px-6 py-3.5 text-slate-400 text-xs">
+                              Due:{" "}
+                              {new Date(
+                                assignment.due_date,
+                              ).toLocaleDateString()}
+                            </td>
+                            <td className="px-6 py-3.5 text-right">
+                              <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                {new Date(assignment.due_date) > new Date()
+                                  ? "Upcoming"
+                                  : "Overdue"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        );
+
       case "courses":
         return (
           <div>
@@ -371,6 +531,17 @@ export default function StudentDashboard() {
         onTabChange={setActiveTab}
       />
       <main className="p-8 max-w-6xl mx-auto">{renderTabContent()}</main>
+    </div>
+  );
+}
+
+function StatCard({ label, value, color }) {
+  return (
+    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+      <p className={`text-4xl font-semibold ${color} mb-1`}>{value}</p>
+      <p className="text-slate-500 text-sm uppercase tracking-[0.1em]">
+        {label}
+      </p>
     </div>
   );
 }
