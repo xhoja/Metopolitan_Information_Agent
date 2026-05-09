@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_assign" targetNamespace="http://bpmn.io/schema/bpmn" exporter="bpmn-js (https://demo.bpmn.io)" exporterVersion="18.13.2">
+  <message id="msg_assignment" name="Assignment Published" />
+  <message id="msg_submission" name="Submission Received" />
+  <collaboration id="Collab_assign">
+    <participant id="part_prof" name="Professor" processRef="proc_prof" />
+    <participant id="part_stu" name="Student" processRef="proc_stu" />
+    <messageFlow id="mf1" name="assignment published" sourceRef="ev_throw_assign" targetRef="ev_start_stu" />
+    <messageFlow id="mf2" name="submission received" sourceRef="ev_throw_sub" targetRef="ev_catch_sub" />
+  </collaboration>
+  <process id="proc_prof" name="Professor" isExecutable="false">
+    <startEvent id="ev_start_prof" name="Start" />
+    <task id="t_create_assign" name="Create Assignment&#10;(title, description, due_date, type)" />
+    <exclusiveGateway id="gw_attach" name="Attach File?" />
+    <task id="t_upload_file_prof" name="Upload File&#10;to Supabase Storage" />
+    <task id="t_save_assign" name="Save Assignment to DB" />
+    <intermediateThrowEvent id="ev_throw_assign" name="Assignment Published">
+      <messageEventDefinition id="med_throw_assign" messageRef="msg_assignment" />
+    </intermediateThrowEvent>
+    <intermediateCatchEvent id="ev_catch_sub" name="Submission Received">
+      <messageEventDefinition id="med_catch_sub" messageRef="msg_submission" />
+    </intermediateCatchEvent>
+    <task id="t_open_sub" name="Open Submission" />
+    <task id="t_grade" name="Add Grade and Feedback" />
+    <task id="t_save_grade" name="Save Grade to DB" />
+    <endEvent id="ev_end_prof" name="End" />
+    <sequenceFlow id="p_sf1" sourceRef="ev_start_prof" targetRef="t_create_assign" />
+    <sequenceFlow id="p_sf2" sourceRef="t_create_assign" targetRef="gw_attach" />
+    <sequenceFlow id="p_sf3" name="Yes" sourceRef="gw_attach" targetRef="t_upload_file_prof" />
+    <sequenceFlow id="p_sf4" name="No" sourceRef="gw_attach" targetRef="t_save_assign" />
+    <sequenceFlow id="p_sf5" sourceRef="t_upload_file_prof" targetRef="t_save_assign" />
+    <sequenceFlow id="p_sf6" sourceRef="t_save_assign" targetRef="ev_throw_assign" />
+    <sequenceFlow id="p_sf7" sourceRef="ev_throw_assign" targetRef="ev_catch_sub" />
+    <sequenceFlow id="p_sf8" sourceRef="ev_catch_sub" targetRef="t_open_sub" />
+    <sequenceFlow id="p_sf9" sourceRef="t_open_sub" targetRef="t_grade" />
+    <sequenceFlow id="p_sf10" sourceRef="t_grade" targetRef="t_save_grade" />
+    <sequenceFlow id="p_sf11" sourceRef="t_save_grade" targetRef="ev_end_prof" />
+  </process>
+  <process id="proc_stu" name="Student" isExecutable="false">
+    <startEvent id="ev_start_stu" name="Assignment Published">
+      <messageEventDefinition id="med_start_stu" messageRef="msg_assignment" />
+    </startEvent>
+    <task id="t_view_assign" name="View Assignment" />
+    <task id="t_upload_file_stu" name="Upload File" />
+    <task id="t_enter_content" name="Enter Text Content" />
+    <exclusiveGateway id="gw_merge_stu" name="" />
+    <task id="t_post_submit" name="POST /assignments/{id}/submit" />
+    <intermediateThrowEvent id="ev_throw_sub" name="Submission Sent">
+      <messageEventDefinition id="med_throw_sub" messageRef="msg_submission" />
+    </intermediateThrowEvent>
+    <endEvent id="ev_end_stu" name="Await Grade" />
+    <sequenceFlow id="s_sf1" sourceRef="ev_start_stu" targetRef="t_view_assign" />
+    <sequenceFlow id="s_sf2" sourceRef="t_view_assign" targetRef="t_select_assign" />
+    <sequenceFlow id="s_sf3" sourceRef="t_select_assign" targetRef="gw_type" />
+    <sequenceFlow id="s_sf4" name="File" sourceRef="gw_type" targetRef="t_upload_file_stu" />
+    <sequenceFlow id="s_sf5" name="Text" sourceRef="gw_type" targetRef="t_enter_content" />
+    <sequenceFlow id="s_sf6" sourceRef="t_upload_file_stu" targetRef="gw_merge_stu" />
+    <sequenceFlow id="s_sf7" sourceRef="t_enter_content" targetRef="gw_merge_stu" />
+    <sequenceFlow id="s_sf8" sourceRef="gw_merge_stu" targetRef="t_post_submit" />
+    <sequenceFlow id="s_sf9" sourceRef="t_post_submit" targetRef="ev_throw_sub" />
+    <sequenceFlow id="s_sf10" sourceRef="ev_throw_sub" targetRef="ev_end_stu" />
+    <exclusiveGateway id="gw_type" name="Submission Type?" />
+    <task id="t_select_assign" name="Select Assignment" />
+  </process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_assign">
+    <bpmndi:BPMNPlane id="BPMNPlane_assign" bpmnElement="Collab_assign">
+      <bpmndi:BPMNShape id="part_prof_di" bpmnElement="part_prof" isHorizontal="true">
+        <dc:Bounds x="130" y="80" width="1700" height="280" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ev_start_prof_di" bpmnElement="ev_start_prof">
+        <dc:Bounds x="202" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="208" y="245" width="24" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_create_assign_di" bpmnElement="t_create_assign">
+        <dc:Bounds x="290" y="180" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_attach_di" bpmnElement="gw_attach" isMarkerVisible="true">
+        <dc:Bounds x="510" y="195" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="502" y="252" width="66" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_upload_file_prof_di" bpmnElement="t_upload_file_prof">
+        <dc:Bounds x="620" y="130" width="160" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_save_assign_di" bpmnElement="t_save_assign">
+        <dc:Bounds x="840" y="180" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ev_throw_assign_di" bpmnElement="ev_throw_assign">
+        <dc:Bounds x="1042" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1031" y="166" width="58" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ev_catch_sub_di" bpmnElement="ev_catch_sub">
+        <dc:Bounds x="1152" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1141" y="164.5" width="57" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_open_sub_di" bpmnElement="t_open_sub">
+        <dc:Bounds x="1250" y="180" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_grade_di" bpmnElement="t_grade">
+        <dc:Bounds x="1450" y="180" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_save_grade_di" bpmnElement="t_save_grade">
+        <dc:Bounds x="1670" y="180" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ev_end_prof_di" bpmnElement="ev_end_prof">
+        <dc:Bounds x="1782" y="202" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1790" y="245" width="20" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="p_sf1_di" bpmnElement="p_sf1">
+        <di:waypoint x="238" y="220" />
+        <di:waypoint x="290" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf2_di" bpmnElement="p_sf2">
+        <di:waypoint x="450" y="220" />
+        <di:waypoint x="510" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf3_di" bpmnElement="p_sf3">
+        <di:waypoint x="535" y="195" />
+        <di:waypoint x="535" y="165" />
+        <di:waypoint x="620" y="165" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="543" y="178" width="19" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf4_di" bpmnElement="p_sf4">
+        <di:waypoint x="560" y="220" />
+        <di:waypoint x="840" y="220" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="693" y="223" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf5_di" bpmnElement="p_sf5">
+        <di:waypoint x="780" y="165" />
+        <di:waypoint x="910" y="165" />
+        <di:waypoint x="910" y="180" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf6_di" bpmnElement="p_sf6">
+        <di:waypoint x="980" y="220" />
+        <di:waypoint x="1042" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf7_di" bpmnElement="p_sf7">
+        <di:waypoint x="1078" y="220" />
+        <di:waypoint x="1152" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf8_di" bpmnElement="p_sf8">
+        <di:waypoint x="1188" y="220" />
+        <di:waypoint x="1250" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf9_di" bpmnElement="p_sf9">
+        <di:waypoint x="1390" y="220" />
+        <di:waypoint x="1450" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf10_di" bpmnElement="p_sf10">
+        <di:waypoint x="1610" y="220" />
+        <di:waypoint x="1670" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="p_sf11_di" bpmnElement="p_sf11">
+        <di:waypoint x="1770" y="220" />
+        <di:waypoint x="1782" y="220" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="part_stu_di" bpmnElement="part_stu" isHorizontal="true">
+        <dc:Bounds x="130" y="400" width="1700" height="300" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ev_start_stu_di" bpmnElement="ev_start_stu">
+        <dc:Bounds x="202" y="532" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="180" y="575" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_view_assign_di" bpmnElement="t_view_assign">
+        <dc:Bounds x="290" y="510" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_upload_file_stu_di" bpmnElement="t_upload_file_stu">
+        <dc:Bounds x="800" y="470" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_enter_content_di" bpmnElement="t_enter_content">
+        <dc:Bounds x="800" y="580" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_merge_stu_di" bpmnElement="gw_merge_stu" isMarkerVisible="true">
+        <dc:Bounds x="1000" y="525" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_post_submit_di" bpmnElement="t_post_submit">
+        <dc:Bounds x="1110" y="510" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ev_throw_sub_di" bpmnElement="ev_throw_sub">
+        <dc:Bounds x="1332" y="532" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1310" y="575" width="80" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ev_end_stu_di" bpmnElement="ev_end_stu">
+        <dc:Bounds x="1432" y="532" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1416" y="575" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="gw_type_di" bpmnElement="gw_type" isMarkerVisible="true">
+        <dc:Bounds x="705" y="525" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="625" y="563" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="t_select_assign_di" bpmnElement="t_select_assign">
+        <dc:Bounds x="480" y="510" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="s_sf1_di" bpmnElement="s_sf1">
+        <di:waypoint x="238" y="550" />
+        <di:waypoint x="290" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf2_di" bpmnElement="s_sf2">
+        <di:waypoint x="430" y="550" />
+        <di:waypoint x="480" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf3_di" bpmnElement="s_sf3">
+        <di:waypoint x="620" y="550" />
+        <di:waypoint x="705" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf4_di" bpmnElement="s_sf4">
+        <di:waypoint x="730" y="525" />
+        <di:waypoint x="730" y="505" />
+        <di:waypoint x="800" y="505" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="738" y="512" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf5_di" bpmnElement="s_sf5">
+        <di:waypoint x="730" y="575" />
+        <di:waypoint x="730" y="630" />
+        <di:waypoint x="800" y="630" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="736" y="605" width="21" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf6_di" bpmnElement="s_sf6">
+        <di:waypoint x="940" y="505" />
+        <di:waypoint x="970" y="505" />
+        <di:waypoint x="970" y="550" />
+        <di:waypoint x="1000" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf7_di" bpmnElement="s_sf7">
+        <di:waypoint x="940" y="615" />
+        <di:waypoint x="970" y="615" />
+        <di:waypoint x="970" y="550" />
+        <di:waypoint x="1000" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf8_di" bpmnElement="s_sf8">
+        <di:waypoint x="1050" y="550" />
+        <di:waypoint x="1110" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf9_di" bpmnElement="s_sf9">
+        <di:waypoint x="1270" y="550" />
+        <di:waypoint x="1332" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="s_sf10_di" bpmnElement="s_sf10">
+        <di:waypoint x="1368" y="550" />
+        <di:waypoint x="1432" y="550" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="mf1_di" bpmnElement="mf1">
+        <di:waypoint x="1060" y="238" />
+        <di:waypoint x="1060" y="400" />
+        <di:waypoint x="220" y="400" />
+        <di:waypoint x="220" y="532" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1002" y="406" width="57" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="mf2_di" bpmnElement="mf2">
+        <di:waypoint x="1350" y="532" />
+        <di:waypoint x="1350" y="400" />
+        <di:waypoint x="1170" y="400" />
+        <di:waypoint x="1170" y="238" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1262" y="406" width="56" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</definitions>
