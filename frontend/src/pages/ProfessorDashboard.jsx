@@ -17,6 +17,11 @@ const EMPTY_ASSIGNMENT = { title: '', description: '', due_date: '', course_id: 
 const EMPTY_GRADE = { student_id: '', course_id: '', value: '', semester: '', grade_type: '', weight: '' }
 const TODAY = new Date().toISOString().split('T')[0]
 
+const LECTURE_WEEKS = 14
+const SESSION_HOURS = 4
+const TOTAL_LECTURE_HOURS = LECTURE_WEEKS * SESSION_HOURS  // 56h
+const HOURS_TO_PASS = TOTAL_LECTURE_HOURS * 0.75           // 42h
+
 export default function ProfessorDashboard() {
   const [tab, setTab]                   = useState('overview')
   const [courses, setCourses]           = useState([])
@@ -67,6 +72,7 @@ export default function ProfessorDashboard() {
   const [gradesLoading, setGradesLoading] = useState(false)
 
   // attendance tab
+  const [attendWeek, setAttendWeek]               = useState(1)
   const [attendCourse, setAttendCourse]           = useState('')
   const [attendStudents, setAttendStudents]       = useState([])
   const [attendSheet, setAttendSheet]             = useState({})  // student_id → hours_present (float)
@@ -873,6 +879,14 @@ export default function ProfessorDashboard() {
                   </select>
                 </div>
                 <div>
+                  <label className="text-slate-400 text-xs font-medium uppercase tracking-wider block mb-2">Week</label>
+                  <select value={attendWeek} onChange={e => setAttendWeek(Number(e.target.value))} className="input-base w-44">
+                    {Array.from({ length: LECTURE_WEEKS }, (_, i) => (
+                      <option key={i + 1} value={i + 1}>Lecture Week {i + 1}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
                   <label className="text-slate-400 text-xs font-medium uppercase tracking-wider block mb-2">Date</label>
                   <input type="date" value={attendDate} onChange={e => setAttendDate(e.target.value)} className="input-base w-40" />
                 </div>
@@ -902,7 +916,7 @@ export default function ProfessorDashboard() {
                   <div>
                     <div className="flex items-center justify-between mb-4">
                       <h2 className="text-sm font-semibold text-white">
-                        Mark Attendance — {attendDate}, {attendSessionStart}–{attendSessionEnd}
+                        Mark Attendance — Week {attendWeek} · {attendDate}, {attendSessionStart}–{attendSessionEnd}
                       </h2>
                       {attendStudents.length > 0 && (
                         <div className="flex gap-2">
@@ -971,7 +985,9 @@ export default function ProfessorDashboard() {
 
                   {/* Attendance rate summary */}
                   <div>
-                    <h2 className="text-sm font-semibold text-white mb-4">Attendance Rates <span className="text-slate-500 font-normal">(75% to pass)</span></h2>
+                    <h2 className="text-sm font-semibold text-white mb-4">
+                      Attendance Rates <span className="text-slate-500 font-normal">(≥{HOURS_TO_PASS}h of {TOTAL_LECTURE_HOURS}h to pass — 75%)</span>
+                    </h2>
                     {attendLoading ? (
                       <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
                     ) : studentStats.length === 0 ? (
@@ -979,8 +995,8 @@ export default function ProfessorDashboard() {
                     ) : (
                       <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
                         {studentStats.map((s, i) => {
-                          const rate = s.hours_possible > 0 ? (s.hours_present / s.hours_possible) * 100 : 0
-                          const pass = rate >= 75
+                          const rate = (s.hours_present / TOTAL_LECTURE_HOURS) * 100
+                          const pass = s.hours_present >= HOURS_TO_PASS
                           return (
                             <div key={s.student_email} className={`px-5 py-4 ${i < studentStats.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
                               <div className="flex items-center justify-between mb-2">
@@ -989,7 +1005,7 @@ export default function ProfessorDashboard() {
                                   <p className="text-slate-500 text-xs truncate">{s.student_email}</p>
                                 </div>
                                 <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                                  <span className="text-slate-400 text-xs">{s.hours_present}/{s.hours_possible}h</span>
+                                  <span className="text-slate-400 text-xs">{s.hours_present}/{TOTAL_LECTURE_HOURS}h</span>
                                   <span className={`text-sm font-semibold w-12 text-right ${pass ? 'text-emerald-400' : 'text-rose-400'}`}>{rate.toFixed(0)}%</span>
                                   <span className={`text-xs font-medium px-2 py-0.5 rounded border ${pass ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'}`}>
                                     {pass ? 'Pass' : 'Fail'}
