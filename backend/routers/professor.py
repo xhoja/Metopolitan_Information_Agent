@@ -29,6 +29,7 @@ class AttendanceBulkItem(BaseModel):
 
 class AttendanceBulkInput(BaseModel):
     course_id: str
+    week_number: int
     date: str
     session_start: str  # "HH:MM"
     session_end: str    # "HH:MM"
@@ -116,8 +117,8 @@ def get_grades(course_id: str, authorization: str = Header(...)):
 @router.get("/attendance/{course_id}")
 def get_attendance(course_id: str, authorization: str = Header(...)):
     res = supabase.table("attendance").select(
-        "id, student_id, date, status, session_start, session_end, hours_present, students(users(name, email))"
-    ).eq("course_id", course_id).order("date", desc=True).execute()
+        "id, student_id, date, status, session_start, session_end, hours_present, week_number, students(users(name, email))"
+    ).eq("course_id", course_id).order("week_number", desc=False).execute()
     result = []
     for r in res.data:
         try:
@@ -133,6 +134,7 @@ def get_attendance(course_id: str, authorization: str = Header(...)):
                 "session_start": (r.get("session_start") or "")[:5],
                 "session_end": (r.get("session_end") or "")[:5],
                 "hours_present": r.get("hours_present") or 0,
+                "week_number": r.get("week_number"),
             })
         except:
             result.append(r)
@@ -143,7 +145,7 @@ def mark_attendance_bulk(data: AttendanceBulkInput, authorization: str = Header(
     token = authorization.replace("Bearer ", "")
     get_professor_id(token)
     duration = _session_duration(data.session_start, data.session_end)
-    supabase.table("attendance").delete().eq("course_id", data.course_id).eq("date", data.date).eq("session_start", data.session_start).execute()
+    supabase.table("attendance").delete().eq("course_id", data.course_id).eq("week_number", data.week_number).execute()
     rows = []
     for r in data.records:
         hp = max(0.0, min(float(r.hours_present), duration))
@@ -151,6 +153,7 @@ def mark_attendance_bulk(data: AttendanceBulkInput, authorization: str = Header(
         rows.append({
             "student_id": r.student_id,
             "course_id": data.course_id,
+            "week_number": data.week_number,
             "date": data.date,
             "session_start": data.session_start,
             "session_end": data.session_end,
@@ -159,6 +162,13 @@ def mark_attendance_bulk(data: AttendanceBulkInput, authorization: str = Header(
         })
     res = supabase.table("attendance").insert(rows).execute()
     return res.data
+
+@router.delete("/attendance/{course_id}/week/{week_number}")
+def delete_attendance_week(course_id: str, week_number: int, authorization: str = Header(...)):
+    token = authorization.replace("Bearer ", "")
+    get_professor_id(token)
+    supabase.table("attendance").delete().eq("course_id", course_id).eq("week_number", week_number).execute()
+    return {"detail": f"Week {week_number} attendance cleared."}
 
 @router.post("/assignments")
 async def create_assignment(

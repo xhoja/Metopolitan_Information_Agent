@@ -20,7 +20,6 @@ const TODAY = new Date().toISOString().split('T')[0]
 const LECTURE_WEEKS = 14
 const SESSION_HOURS = 4
 const TOTAL_LECTURE_HOURS = LECTURE_WEEKS * SESSION_HOURS  // 56h
-const HOURS_TO_PASS = TOTAL_LECTURE_HOURS * 0.75           // 42h
 
 export default function ProfessorDashboard() {
   const [tab, setTab]                   = useState('overview')
@@ -80,7 +79,6 @@ export default function ProfessorDashboard() {
   const [attendSessionStart, setAttendSessionStart] = useState('08:00')
   const [attendSessionEnd, setAttendSessionEnd]   = useState('12:00')
   const [attendRecords, setAttendRecords]         = useState([])
-  const [attendLoading, setAttendLoading]         = useState(false)
   const [attendSaving, setAttendSaving]           = useState(false)
   const [attendError, setAttendError]             = useState('')
   const [attendSuccess, setAttendSuccess]         = useState('')
@@ -254,11 +252,9 @@ export default function ProfessorDashboard() {
         setAttendSheet(sheet)
       })
       .catch(() => { setAttendStudents([]); setAttendSheet({}) })
-    setAttendLoading(true)
     api.get(`/professor/attendance/${attendCourse}`)
       .then(r => setAttendRecords(r.data))
       .catch(() => setAttendRecords([]))
-      .finally(() => setAttendLoading(false))
   }, [attendCourse])
 
   const handleSubmitAttendance = async () => {
@@ -270,6 +266,7 @@ export default function ProfessorDashboard() {
       const records = Object.entries(attendSheet).map(([student_id, hours_present]) => ({ student_id, hours_present: Number(hours_present) }))
       await api.post('/professor/attendance/bulk', {
         course_id: attendCourse,
+        week_number: attendWeek,
         date: attendDate,
         session_start: attendSessionStart,
         session_end: attendSessionEnd,
@@ -844,19 +841,19 @@ export default function ProfessorDashboard() {
         {/* ATTENDANCE */}
         {tab === 'attendance' && (() => {
           const sessionDuration = calcDuration(attendSessionStart, attendSessionEnd)
+          const recordedWeeks = new Set(attendRecords.map(r => r.week_number).filter(Boolean))
+          const weekAlreadyRecorded = recordedWeeks.has(attendWeek)
 
-          // Aggregate per-student stats from past records
-          const statsMap = {}
-          attendRecords.forEach(r => {
-            if (!statsMap[r.student_id]) {
-              statsMap[r.student_id] = { student_name: r.student_name, student_email: r.student_email, hours_present: 0, hours_possible: 0, sessions: [] }
+          const handleClearWeek = async (weekNum) => {
+            try {
+              await api.delete(`/professor/attendance/${attendCourse}/week/${weekNum}`)
+              const r = await api.get(`/professor/attendance/${attendCourse}`)
+              setAttendRecords(r.data)
+              setAttendSuccess(`Week ${weekNum} cleared.`)
+            } catch {
+              setAttendError(`Failed to clear week ${weekNum}.`)
             }
-            const dur = (r.session_start && r.session_end) ? calcDuration(r.session_start, r.session_end) : 0
-            statsMap[r.student_id].hours_present += r.hours_present || 0
-            statsMap[r.student_id].hours_possible += dur
-            statsMap[r.student_id].sessions.push(r)
-          })
-          const studentStats = Object.values(statsMap)
+          }
 
           return (
             <div>
@@ -880,10 +877,12 @@ export default function ProfessorDashboard() {
                 </div>
                 <div>
                   <label className="text-slate-400 text-xs font-medium uppercase tracking-wider block mb-2">Week</label>
-                  <select value={attendWeek} onChange={e => setAttendWeek(Number(e.target.value))} className="input-base w-44">
-                    {Array.from({ length: LECTURE_WEEKS }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>Lecture Week {i + 1}</option>
-                    ))}
+                  <select value={attendWeek} onChange={e => setAttendWeek(Number(e.target.value))} className="input-base w-52">
+                    {Array.from({ length: LECTURE_WEEKS }, (_, i) => {
+                      const w = i + 1
+                      const done = recordedWeeks.has(w)
+                      return <option key={w} value={w}>{done ? `✓ ` : ''}Lecture Week {w}</option>
+                    })}
                   </select>
                 </div>
                 <div>
@@ -907,10 +906,20 @@ export default function ProfessorDashboard() {
                 )}
               </div>
 
+              {weekAlreadyRecorded && attendCourse && (
+                <div className="mb-6 flex items-center justify-between gap-4 px-4 py-3 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                  <p className="text-amber-300 text-sm">Week {attendWeek} already recorded. Save will overwrite it, or clear it first.</p>
+                  <button
+                    onClick={() => handleClearWeek(attendWeek)}
+                    className="text-xs font-medium text-rose-400 hover:text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-lg transition"
+                  >Clear Week {attendWeek}</button>
+                </div>
+              )}
+
               {!attendCourse ? (
                 <EmptyState message="Select a course to take attendance." />
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 gap-8">
 
                   {/* Attendance sheet */}
                   <div>
@@ -983,47 +992,6 @@ export default function ProfessorDashboard() {
                     )}
                   </div>
 
-                  {/* Attendance rate summary */}
-                  <div>
-                    <h2 className="text-sm font-semibold text-white mb-4">
-                      Attendance Rates <span className="text-slate-500 font-normal">(≥{HOURS_TO_PASS}h of {TOTAL_LECTURE_HOURS}h to pass — 75%)</span>
-                    </h2>
-                    {attendLoading ? (
-                      <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">Loading…</div>
-                    ) : studentStats.length === 0 ? (
-                      <div className="bg-slate-800 border border-slate-700 rounded-xl flex items-center justify-center py-16 text-slate-500 text-sm">No records yet. Save a session to see rates.</div>
-                    ) : (
-                      <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-                        {studentStats.map((s, i) => {
-                          const rate = (s.hours_present / TOTAL_LECTURE_HOURS) * 100
-                          const pass = s.hours_present >= HOURS_TO_PASS
-                          return (
-                            <div key={s.student_email} className={`px-5 py-4 ${i < studentStats.length - 1 ? 'border-b border-slate-800/60' : ''}`}>
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="min-w-0">
-                                  <p className="text-white text-sm font-medium truncate">{s.student_name}</p>
-                                  <p className="text-slate-500 text-xs truncate">{s.student_email}</p>
-                                </div>
-                                <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                                  <span className="text-slate-400 text-xs">{s.hours_present}/{TOTAL_LECTURE_HOURS}h</span>
-                                  <span className={`text-sm font-semibold w-12 text-right ${pass ? 'text-emerald-400' : 'text-rose-400'}`}>{rate.toFixed(0)}%</span>
-                                  <span className={`text-xs font-medium px-2 py-0.5 rounded border ${pass ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'bg-rose-500/15 text-rose-300 border-rose-500/30'}`}>
-                                    {pass ? 'Pass' : 'Fail'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="w-full bg-slate-700 rounded-full h-1.5">
-                                <div
-                                  className={`h-1.5 rounded-full transition-all ${pass ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                                  style={{ width: `${Math.min(100, rate)}%` }}
-                                />
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-                  </div>
 
                 </div>
               )}
