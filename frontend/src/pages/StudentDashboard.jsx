@@ -142,7 +142,7 @@ export default function StudentDashboard() {
                     value={
                       grades.length > 0
                         ? (
-                            grades.reduce((sum, g) => sum + g.grade, 0) /
+                            grades.reduce((sum, g) => sum + g.value, 0) /
                             grades.length
                           ).toFixed(2)
                         : "N/A"
@@ -314,7 +314,7 @@ export default function StudentDashboard() {
                   <h3 className="text-lg font-semibold text-white mb-2">GPA</h3>
                   <p className="text-3xl font-bold text-blue-400">
                     {(
-                      grades.reduce((sum, g) => sum + g.grade, 0) /
+                      grades.reduce((sum, g) => sum + g.value, 0) /
                       grades.length
                     ).toFixed(2)}
                   </p>
@@ -329,7 +329,7 @@ export default function StudentDashboard() {
                         {grade.courses?.code} - {grade.courses?.title}
                       </h3>
                       <p className="text-xl font-bold text-green-400">
-                        Grade: {grade.grade}%
+                        Grade: {grade.value}%
                       </p>
                     </div>
                   ))}
@@ -396,17 +396,36 @@ export default function StudentDashboard() {
                     <p className="text-slate-400 mb-4">
                       Due: {new Date(assignment.due_date).toLocaleDateString()}
                     </p>
-                    <button
-                      onClick={() => {
-                        const content = prompt("Enter assignment content:");
-                        if (content) {
-                          submitAssignment(assignment.id, { content });
-                        }
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition"
-                    >
-                      Submit Assignment
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const content = prompt("Enter assignment content:");
+                          if (content) {
+                            submitAssignment(assignment.id, { content });
+                          }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded transition text-sm"
+                      >
+                        Submit Text
+                      </button>
+                      <button
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = ".pdf,.doc,.docx,.txt,.zip";
+                          input.onchange = (e) => {
+                            const file = e.target.files[0];
+                            if (file) {
+                              submitAssignment(assignment.id, { file });
+                            }
+                          };
+                          input.click();
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded transition text-sm"
+                      >
+                        Upload File
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -455,7 +474,7 @@ export default function StudentDashboard() {
                           {grade.courses?.code} - {grade.courses?.title}
                         </span>
                         <span className="text-slate-400">
-                          Grade: {grade.grade}% | Credits:{" "}
+                          Grade: {grade.value}% | Credits:{" "}
                           {grade.credits?.credits}
                         </span>
                       </div>
