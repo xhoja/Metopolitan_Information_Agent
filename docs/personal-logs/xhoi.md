@@ -4,6 +4,14 @@
 
 ---
 
+## Week 5 — 2026-05-11
+
+This week I focused on system design documentation and frontend polish. I created UI system design diagrams for all four main views — Home/Login, Student Dashboard, Professor Dashboard, and Admin Dashboard — and organised them into the project docs. On the frontend side, I continued refining the React components and layout details across the dashboards to bring them closer to the final design spec.
+
+**Tech explored:** UI system design documentation, React component refinement, dashboard layout polish.
+
+---
+
 ## Week 4 — 2026-04-22
 
 This week I completed the UI polish pass across all dashboards — switched to lighter blues throughout the colour scheme, redesigned the hero section on the landing page, and added password reveal toggles to the login form. I also resolved a CORS configuration issue between the frontend and backend that was blocking API calls in the development environment. Currently working on tightening up the admin and professor dashboard layouts to match the latest wireframe specs.
