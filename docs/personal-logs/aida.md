@@ -4,6 +4,12 @@
           Tester — supporting backend validation and ensuring correct API behavior  
 
 
+## Week 5 — 2026-05-11
+
+This week I focused on the student backend — reviewing and refining existing endpoints for correctness and consistency. Tested GPA calculation logic against edge cases, validated assignment submission flow end-to-end, and ensured enrollment checks behave correctly under concurrent requests. Worked closely with the frontend to verify the student dashboard data matches expected API responses.
+
+**Tech explored:** FastAPI validation patterns, Supabase query optimization, end-to-end API testing.
+
 ## Week 4 — 2026-04-22
 
 This week I worked on backend API functionality, with a strong focus on making sure endpoints behave correctly and handle different scenarios properly. I implemented several endpoints in student.py, including retrieving course materials with enrollment checks, GPA calculation using weighted logic, and endpoints for assignments and submissions with related course data.

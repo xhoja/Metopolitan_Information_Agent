@@ -4,6 +4,14 @@
 
 ---
 
+## Week 5 — 2026-05-11
+
+This week I focused on refining and stabilising the admin and professor backend endpoints. Reviewed all admin routes for edge cases and ensured proper validation and error responses. Worked on professor dashboard API — course management, grade submission, and attendance endpoints — testing each against the frontend integration. Coordinated with the frontend team to resolve any mismatches in response structure.
+
+**Tech explored:** FastAPI endpoint hardening, role-based route validation, backend-frontend API contract alignment.
+
+---
+
 ## Week 4 — 2026-04-22
 
 Finalized all backend routes and confirmed full integration with the frontend. All endpoints were tested via FastAPI's `/docs` interface — register, login, and admin user creation all returned correct responses and data appeared live in the Supabase Table Editor. CORS was configured to allow the frontend running at `http://localhost:5173`. No blockers this week — the backend is fully functional and connected.

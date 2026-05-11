@@ -4,16 +4,6 @@
 
 ---
 
-## Week 6 - 2026-05-11
-
-**What I worked on:**
-Added comprehensive overview section to student dashboard with academic snapshot. Created StatCard component for displaying key metrics (enrolled courses, GPA, assignments, attendance rate). Implemented real-time GPA calculation and attendance percentage. Added preview tables for recent courses and assignments with navigation to full views. Enhanced user experience with loading states and empty state handling.
-
-**What I learned:**
-Advanced React state management for complex data aggregation and real-time calculations. Improved understanding of responsive grid layouts and component composition patterns.
-
----
-
 ## Week 5 - 2026-05-04
 
 **What I worked on:**
