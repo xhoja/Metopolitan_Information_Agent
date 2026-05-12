@@ -34,6 +34,8 @@ export default function StudentDashboard() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
 
+  const [courseActiveSubTabs, setCourseActiveSubTabs] = useState({});
+
   useEffect(() => {
     studentService
       .getCourses()
@@ -158,11 +160,43 @@ export default function StudentDashboard() {
                     label="Attendance Rate"
                     value={
                       attendance.length > 0
-                        ? Math.round(
-                            (attendance.filter((a) => a.present).length /
-                              attendance.length) *
-                              100,
-                          ) + "%"
+                        ? (() => {
+                            // Group by course and calculate using the new logic
+                            const courseGroups = attendance.reduce(
+                              (acc, record) => {
+                                const courseId = record.course_id;
+                                if (!acc[courseId]) acc[courseId] = [];
+                                acc[courseId].push(record);
+                                return acc;
+                              },
+                              {},
+                            );
+
+                            let totalHoursPresent = 0;
+                            let totalHoursScheduled = 0;
+
+                            Object.values(courseGroups).forEach((records) => {
+                              const hoursPresent = records.reduce(
+                                (sum, r) => sum + r.hours_present,
+                                0,
+                              );
+                              const weeksRecorded = new Set(
+                                records.map((r) => r.week_number),
+                              ).size;
+                              const hoursScheduled = weeksRecorded * 4;
+
+                              totalHoursPresent += hoursPresent;
+                              totalHoursScheduled += hoursScheduled;
+                            });
+
+                            const rate =
+                              totalHoursScheduled > 0
+                                ? (totalHoursPresent / totalHoursScheduled) *
+                                  100
+                                : 100;
+
+                            return Math.round(rate) + "%";
+                          })()
                         : "N/A"
                     }
                     color="text-purple-400"
@@ -203,7 +237,7 @@ export default function StudentDashboard() {
                               {enrollment.courses?.code}
                             </td>
                             <td className="px-6 py-3.5 text-slate-500 text-xs">
-                              {enrollment.courses?.credits} credits
+                              {enrollment.courses?.credits} cr
                             </td>
                             <td className="px-6 py-3.5 text-right">
                               <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30">
@@ -271,28 +305,79 @@ export default function StudentDashboard() {
       case "courses":
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">My Courses</h2>
+            <div className="mb-8">
+              <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">
+                Academic
+              </p>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">
+                My Courses
+              </h1>
+            </div>
             {coursesLoading ? (
-              <div className="text-slate-400">Loading courses...</div>
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm">
+                Loading courses…
+              </div>
             ) : courses.length === 0 ? (
-              <div className="text-slate-400">No courses found</div>
+              <div className="flex flex-col items-center justify-center py-24 gap-3 bg-slate-800 border border-slate-700 rounded-xl">
+                <div className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-slate-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6.25v6m0 0l4.5-4.5M12 12.25l-4.5-4.5"
+                    />
+                  </svg>
+                </div>
+                <p className="text-slate-400 text-sm font-medium">
+                  No courses enrolled yet
+                </p>
+              </div>
             ) : (
-              <div className="grid gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {courses.map((enrollment) => (
                   <div
                     key={enrollment.id}
-                    className="bg-slate-900 border border-slate-800 rounded-lg p-6"
+                    className="bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl p-6 transition-colors"
                   >
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      {enrollment.courses?.code} - {enrollment.courses?.title}
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                        {enrollment.courses?.code || "Unknown Code"}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {enrollment.courses?.credits || 0} credits
+                      </span>
+                    </div>
+                    <h3 className="text-white font-semibold mb-1">
+                      {enrollment.courses?.title || "Unknown Course"}
                     </h3>
-                    <p className="text-slate-400">
-                      Credits: {enrollment.courses?.credits}
-                    </p>
-                    <p className="text-slate-400">
-                      Enrolled:{" "}
-                      {new Date(enrollment.enrolled_at).toLocaleDateString()}
-                    </p>
+                    <div className="flex items-center gap-2 mt-3 text-xs text-slate-400">
+                      <svg
+                        className="w-3 h-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                        />
+                      </svg>
+                      Enrolled{" "}
+                      {enrollment.enrolled_at
+                        ? new Date(enrollment.enrolled_at).toLocaleDateString(
+                            "en-GB",
+                            { day: "numeric", month: "short", year: "numeric" },
+                          )
+                        : "—"}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -342,31 +427,252 @@ export default function StudentDashboard() {
       case "attendance":
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">Attendance</h2>
+            <h2 className="text-2xl font-bold mb-6">Course Info</h2>
             {attendanceLoading ? (
               <div className="text-slate-400">Loading attendance...</div>
             ) : attendance.length === 0 ? (
               <div className="text-slate-400">No attendance records found</div>
             ) : (
-              <div className="grid gap-4">
-                {attendance.map((record) => (
-                  <div
-                    key={record.id}
-                    className="bg-slate-900 border border-slate-800 rounded-lg p-6"
-                  >
-                    <h3 className="text-lg font-semibold text-white mb-2">
-                      {record.courses?.title}
-                    </h3>
-                    <p className="text-slate-400">
-                      Date: {new Date(record.date).toLocaleDateString()}
-                    </p>
-                    <p
-                      className={`font-semibold ${record.present ? "text-green-400" : "text-red-400"}`}
-                    >
-                      Status: {record.present ? "Present" : "Absent"}
-                    </p>
-                  </div>
-                ))}
+              <div className="space-y-8">
+                {(() => {
+                  // Group attendance records by course
+                  const courseGroups = attendance.reduce((acc, record) => {
+                    const courseId = record.course_id;
+                    if (!acc[courseId]) {
+                      acc[courseId] = {
+                        courseTitle:
+                          record.courses?.title || "Unknown Course Title",
+                        courseCode:
+                          record.courses?.code || "Unknown Course Code",
+                        records: [],
+                      };
+                    }
+                    acc[courseId].records.push(record);
+                    return acc;
+                  }, {});
+
+                  return Object.values(courseGroups).map((course, index) => {
+                    const records = course.records;
+
+                    // Calculate attendance metrics
+                    const hoursPresent = records.reduce(
+                      (sum, r) => sum + r.hours_present,
+                      0,
+                    );
+                    const weeksRecorded = new Set(
+                      records.map((r) => r.week_number),
+                    ).size;
+                    const hoursScheduled = weeksRecorded * 4;
+                    const rate =
+                      hoursScheduled > 0
+                        ? (hoursPresent / hoursScheduled) * 100
+                        : 100;
+
+                    // Determine if course is finalized (14 weeks completed)
+                    const isFinalized = weeksRecorded >= 14;
+
+                    // Sort records by week number (descending to show latest first)
+                    const sortedRecords = [...records].sort(
+                      (a, b) => b.week_number - a.week_number,
+                    );
+
+                    return (
+                      <div
+                        key={index}
+                        className="bg-slate-900 border border-slate-800 rounded-lg p-6"
+                      >
+                        {/* Course Header */}
+                        <div className="flex justify-between items-start mb-6">
+                          <div>
+                            <h3 className="text-xl font-bold text-white mb-1">
+                              {course.courseCode}
+                            </h3>
+                            <p className="text-lg text-slate-300 mb-2">
+                              {course.courseTitle}
+                            </p>
+                            <div className="flex gap-4 text-sm text-slate-400">
+                              <span>Attendance Th: {rate.toFixed(0)}%</span>
+                              <span>L: {rate.toFixed(0)}%</span>
+                            </div>
+                          </div>
+                          <CircularProgressBar
+                            percentage={rate}
+                            isFinalized={isFinalized}
+                          />
+                        </div>
+
+                        {/* Tabs */}
+                        <div className="border-b border-slate-700 mb-6">
+                          <div className="flex gap-8">
+                            <button
+                              onClick={() =>
+                                setCourseActiveSubTabs((prev) => ({
+                                  ...prev,
+                                  [course.courseId || index]: "attendance",
+                                }))
+                              }
+                              className={`pb-2 text-sm font-medium transition ${
+                                courseActiveSubTabs[
+                                  course.courseId || index
+                                ] !== "interim"
+                                  ? "text-white border-b-2 border-blue-500"
+                                  : "text-slate-400 hover:text-white"
+                              }`}
+                            >
+                              Attendance
+                            </button>
+                            <button
+                              onClick={() =>
+                                setCourseActiveSubTabs((prev) => ({
+                                  ...prev,
+                                  [course.courseId || index]: "interim",
+                                }))
+                              }
+                              className={`pb-2 text-sm font-medium transition ${
+                                courseActiveSubTabs[
+                                  course.courseId || index
+                                ] === "interim"
+                                  ? "text-white border-b-2 border-blue-500"
+                                  : "text-slate-400 hover:text-white"
+                              }`}
+                            >
+                              Interim Grades
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Content based on active sub-tab */}
+                        {courseActiveSubTabs[course.courseId || index] ===
+                        "interim" ? (
+                          /* Interim Grades View */
+                          <div className="space-y-4">
+                            {grades.length > 0 ? (
+                              grades
+                                .filter(
+                                  (grade) =>
+                                    grade.courses?.code === course.courseCode,
+                                )
+                                .map((grade) => (
+                                  <div
+                                    key={grade.id}
+                                    className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50"
+                                  >
+                                    <div className="flex justify-between items-center">
+                                      <div>
+                                        <p className="text-white font-medium">
+                                          {grade.courses?.title}
+                                        </p>
+                                        <p className="text-sm text-slate-400">
+                                          Grade: {grade.value}%
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <p className="text-2xl font-bold text-green-400">
+                                          {grade.value}%
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                          Current Grade
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))
+                            ) : (
+                              <div className="text-center py-8 text-slate-400">
+                                No interim grades available for this course yet.
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          /* Attendance Records List */
+                          <div className="space-y-3">
+                            {sortedRecords.map((record) => (
+                              <div
+                                key={record.id}
+                                className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700/50"
+                              >
+                                <div className="flex items-center gap-4">
+                                  {/* Week Number Circle */}
+                                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    {record.week_number}
+                                  </div>
+
+                                  {/* Session Info */}
+                                  <div>
+                                    <p className="text-white font-medium">
+                                      {record.status === "present"
+                                        ? "Present"
+                                        : "Absent"}{" "}
+                                      - Week {record.week_number}
+                                    </p>
+                                    <div className="flex items-center gap-3 mt-1">
+                                      <span className="text-sm text-slate-400">
+                                        {record.hours_present}/2h attended
+                                      </span>
+                                      <span
+                                        className={`text-xs px-2 py-1 rounded-full ${
+                                          record.session_start?.includes(
+                                            "Theory",
+                                          ) ||
+                                          record.session_start?.includes("T")
+                                            ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                                            : "bg-green-500/20 text-green-300 border border-green-500/30"
+                                        }`}
+                                      >
+                                        {record.session_start?.includes(
+                                          "Theory",
+                                        ) || record.session_start?.includes("T")
+                                          ? "theory"
+                                          : "lab"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Date */}
+                                <div className="text-sm text-slate-400">
+                                  {new Date(record.date).toLocaleDateString()}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Grade Info - only show if course is finalized */}
+                        {isFinalized && (
+                          <div className="mt-6 pt-6 border-t border-slate-700">
+                            <div className="grid grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <span className="text-slate-400">
+                                  Final Grade:
+                                </span>
+                                <span className="ml-2 text-white font-medium">
+                                  N/A
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Points:</span>
+                                <span className="ml-2 text-white">N/A</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">
+                                  Class Average:
+                                </span>
+                                <span className="ml-2 text-white">N/A</span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">
+                                  Max Can Get:
+                                </span>
+                                <span className="ml-2 text-white">N/A</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             )}
           </div>
@@ -561,6 +867,49 @@ function StatCard({ label, value, color }) {
       <p className="text-slate-500 text-sm uppercase tracking-[0.1em]">
         {label}
       </p>
+    </div>
+  );
+}
+
+function CircularProgressBar({
+  percentage,
+  size = 120,
+  strokeWidth = 8,
+  isFinalized = false,
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (percentage / 100) * circumference;
+
+  return (
+    <div className="relative inline-flex items-center justify-center">
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#374151"
+          strokeWidth={strokeWidth}
+          fill="none"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="#10b981"
+          strokeWidth={strokeWidth}
+          fill="none"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+          className="transition-all duration-500 ease-out"
+        />
+      </svg>
+      <div className="absolute text-center">
+        <p className="text-2xl font-bold text-white">
+          {percentage.toFixed(1)}%
+        </p>
+        {isFinalized && <p className="text-xs text-slate-400">finalized</p>}
+      </div>
     </div>
   );
 }
