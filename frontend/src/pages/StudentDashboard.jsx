@@ -205,12 +205,12 @@ export default function StudentDashboard() {
 
                 <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden mb-6">
                   <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
-                    <h2 className="text-sm font-semibold text-white">
+                    <h2 className="text-sm font-semibold text-amber-400 uppercase tracking-wider">
                       My Courses
                     </h2>
                     <button
                       onClick={() => setActiveTab("courses")}
-                      className="text-amber-400 hover:text-amber-300 text-xs transition"
+                      className="text-amber-400 hover:text-amber-300 text-xs font-medium transition"
                     >
                       View all →
                     </button>
@@ -227,21 +227,21 @@ export default function StudentDashboard() {
                             key={enrollment.id}
                             className={`hover:bg-slate-950/40 transition-colors ${i < courses.slice(0, 3).length - 1 ? "border-b border-slate-800/60" : ""}`}
                           >
-                            <td className="px-6 py-3.5 font-medium text-white">
+                            <td className="px-6 py-4 font-medium text-white">
                               {enrollment.courses?.title}
                             </td>
                             <td
-                              className="px-6 py-3.5 text-slate-400 text-xs"
+                              className="px-6 py-4 text-slate-400 text-xs font-medium"
                               style={{ fontFamily: "'DM Mono', monospace" }}
                             >
                               {enrollment.courses?.code}
                             </td>
-                            <td className="px-6 py-3.5 text-slate-500 text-xs">
-                              {enrollment.courses?.credits} cr
+                            <td className="px-6 py-4 text-slate-400 text-xs">
+                              {enrollment.courses?.department || "—"}
                             </td>
-                            <td className="px-6 py-3.5 text-right">
-                              <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-blue-500/15 text-blue-300 border border-blue-500/30">
-                                Enrolled
+                            <td className="px-6 py-4 text-right">
+                              <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                {enrollment.courses?.credits} cr
                               </span>
                             </td>
                           </tr>
@@ -388,38 +388,177 @@ export default function StudentDashboard() {
       case "grades":
         return (
           <div>
-            <h2 className="text-2xl font-bold mb-6">Grades & GPA</h2>
+            <div className="mb-8">
+              <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">
+                Academic
+              </p>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">
+                Grades & GPA
+              </h1>
+            </div>
+
             {gradesLoading ? (
-              <div className="text-slate-400">Loading grades...</div>
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm">
+                Loading grades…
+              </div>
             ) : grades.length === 0 ? (
-              <div className="text-slate-400">No grades found</div>
-            ) : (
-              <div>
-                <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">GPA</h3>
-                  <p className="text-3xl font-bold text-blue-400">
-                    {(
-                      grades.reduce((sum, g) => sum + g.value, 0) /
-                      grades.length
-                    ).toFixed(2)}
-                  </p>
+              <div className="flex flex-col items-center justify-center py-24 gap-3 bg-slate-800 border border-slate-700 rounded-xl">
+                <div className="w-10 h-10 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-slate-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
                 </div>
-                <div className="grid gap-4">
-                  {grades.map((grade) => (
-                    <div
-                      key={grade.id}
-                      className="bg-slate-900 border border-slate-800 rounded-lg p-6"
-                    >
+                <p className="text-slate-400 text-sm font-medium">
+                  No grades recorded yet
+                </p>
+              </div>
+            ) : (
+              <>
+                {/* GPA Overview */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-8">
+                  <div className="flex items-center justify-between">
+                    <div>
                       <h3 className="text-lg font-semibold text-white mb-2">
-                        {grade.courses?.code} - {grade.courses?.title}
+                        Overall GPA
                       </h3>
-                      <p className="text-xl font-bold text-green-400">
-                        Grade: {grade.value}%
+                      <p className="text-4xl font-bold text-amber-400">
+                        {(
+                          grades.reduce((sum, g) => sum + g.value, 0) /
+                          grades.length
+                        ).toFixed(2)}
+                      </p>
+                      <p className="text-sm text-slate-400 mt-1">
+                        Based on {grades.length} grade
+                        {grades.length !== 1 ? "s" : ""}
                       </p>
                     </div>
-                  ))}
+                    <div className="text-right">
+                      <div className="text-sm text-slate-400 mb-2">
+                        Grade Distribution
+                      </div>
+                      <div className="space-y-1">
+                        {["A", "B", "C", "D", "F"].map((letter, i) => {
+                          const threshold = 90 - i * 20;
+                          const count = grades.filter(
+                            (g) =>
+                              g.value >= threshold - 10 &&
+                              g.value < threshold + 10,
+                          ).length;
+                          const percentage = (count / grades.length) * 100;
+                          return (
+                            <div
+                              key={letter}
+                              className="flex items-center gap-2 text-xs"
+                            >
+                              <span className="text-slate-400 w-4">
+                                {letter}:
+                              </span>
+                              <div className="w-16 bg-slate-700 rounded-full h-1.5">
+                                <div
+                                  className={`h-1.5 rounded-full ${
+                                    letter === "A"
+                                      ? "bg-emerald-500"
+                                      : letter === "B"
+                                        ? "bg-blue-500"
+                                        : letter === "C"
+                                          ? "bg-amber-500"
+                                          : letter === "D"
+                                            ? "bg-orange-500"
+                                            : "bg-red-500"
+                                  }`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                              <span className="text-slate-500 w-8 text-right">
+                                {count}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Detailed Grades Table */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                  <div className="px-6 py-4 border-b border-slate-800">
+                    <h2 className="text-sm font-semibold text-white">
+                      Grade Details
+                    </h2>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-800">
+                        {["Course", "Type", "Grade", "Weight", "Semester"].map(
+                          (h) => (
+                            <th
+                              key={h}
+                              className="text-left px-4 py-3 text-slate-500 font-medium text-xs uppercase tracking-widest"
+                            >
+                              {h}
+                            </th>
+                          ),
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {grades.map((grade, i) => (
+                        <tr
+                          key={grade.id || i}
+                          className={`hover:bg-slate-950/40 transition-colors ${i < grades.length - 1 ? "border-b border-slate-800/60" : ""}`}
+                        >
+                          <td className="px-4 py-3">
+                            <p className="text-white text-sm font-medium">
+                              {grade.courses?.title || "—"}
+                            </p>
+                            <p
+                              className="text-slate-500 text-xs"
+                              style={{ fontFamily: "'DM Mono', monospace" }}
+                            >
+                              {grade.courses?.code || "—"}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="text-xs font-medium px-2 py-0.5 rounded capitalize bg-blue-300/15 text-blue-300 border border-blue-400/30">
+                              {grade.grade_type || "—"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`text-sm font-semibold ${
+                                grade.value >= 90
+                                  ? "text-emerald-400"
+                                  : grade.value >= 70
+                                    ? "text-amber-400"
+                                    : "text-rose-400"
+                              }`}
+                            >
+                              {grade.value}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-slate-400 text-xs">
+                            {grade.weight || "—"}%
+                          </td>
+                          <td className="px-4 py-3 text-slate-400 text-xs">
+                            {grade.semester || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         );
