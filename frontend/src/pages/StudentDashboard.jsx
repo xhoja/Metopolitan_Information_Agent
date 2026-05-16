@@ -8,6 +8,7 @@ const tabs = [
   { id: "grades", label: "Grades & GPA" },
   { id: "attendance", label: "Attendance" },
   { id: "assignments", label: "Assignments" },
+  { id: "materials", label: "Course Materials" },
   { id: "transcript", label: "Transcript" },
   { id: "mia", label: "M.I.A Chat" },
 ];
@@ -17,6 +18,10 @@ export default function StudentDashboard() {
 
   const [courses, setCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedMaterialsCourse, setSelectedMaterialsCourse] = useState(null);
+  const [courseMaterials, setCourseMaterials] = useState([]);
+  const [materialsLoading, setMaterialsLoading] = useState(false);
 
   const [grades, setGrades] = useState([]);
   const [gradesLoading, setGradesLoading] = useState(true);
@@ -34,6 +39,11 @@ export default function StudentDashboard() {
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState("");
+  const [currentSessionId, setCurrentSessionId] = useState(null);
+  const [sessions, setSessions] = useState([]);
+  const [sessionsLoading, setSessionsLoading] = useState(false);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [sessionPreviews, setSessionPreviews] = useState({});
 
 
   useEffect(() => {
@@ -76,14 +86,84 @@ export default function StudentDashboard() {
       .finally(() => setTranscriptLoading(false));
   }, []);
 
+  useEffect(() => {
+    if (activeTab === "mia") loadSessions();
+  }, [activeTab]);
+
+
+  const loadSessions = () => {
+    setSessionsLoading(true);
+    miaService
+      .getSessions()
+      .then((res) => {
+        const sessionList = res.data;
+        setSessions(sessionList);
+        Promise.all(
+          sessionList.map((s) =>
+            miaService
+              .getSessionMessages(s.id)
+              .then((r) => {
+                const first = r.data.find((m) => m.role === "user");
+                return [s.id, first ? first.content : null];
+              })
+              .catch(() => [s.id, null])
+          )
+        ).then((entries) => {
+          setSessionPreviews(Object.fromEntries(entries));
+        });
+      })
+      .catch((err) => console.error("Sessions error:", err))
+      .finally(() => setSessionsLoading(false));
+  };
+
+  const loadSession = (sessionId) => {
+    setSelectedSessionId(sessionId);
+    setCurrentSessionId(sessionId);
+    setChatError("");
+    miaService
+      .getSessionMessages(sessionId)
+      .then((res) => setMessages(res.data))
+      .catch((err) => console.error("Session messages error:", err));
+  };
+
+  const startNewChat = () => {
+    setCurrentSessionId(null);
+    setSelectedSessionId(null);
+    setMessages([]);
+    setChatError("");
+  };
+
+  const deleteSession = (e, sessionId) => {
+    e.stopPropagation();
+    miaService
+      .deleteSession(sessionId)
+      .then(() => {
+        setSessions((prev) => prev.filter((s) => s.id !== sessionId));
+        setSessionPreviews((prev) => {
+          const next = { ...prev };
+          delete next[sessionId];
+          return next;
+        });
+        if (selectedSessionId === sessionId) startNewChat();
+      })
+      .catch((err) => console.error("Delete session error:", err));
+  };
+
   const sendMessage = () => {
     if (!chatInput.trim()) return;
 
     setChatLoading(true);
     setChatError("");
     miaService
-      .chat(chatInput)
+      .chat(chatInput, currentSessionId)
       .then((res) => {
+        if (!currentSessionId && res.data.session_id !== "temporary") {
+          const newId = res.data.session_id;
+          setCurrentSessionId(newId);
+          setSelectedSessionId(newId);
+          setSessionPreviews((prev) => ({ ...prev, [newId]: chatInput }));
+          loadSessions();
+        }
         setMessages((prev) => [
           ...prev,
           { role: "user", content: chatInput },
@@ -307,6 +387,101 @@ export default function StudentDashboard() {
         );
 
       case "courses":
+        if (selectedCourse) {
+          const courseAttendance = attendance.filter(
+            (r) => r.course_id === selectedCourse.courses?.id
+          );
+          const courseGrades = grades.filter(
+            (g) => g.course_id === selectedCourse.courses?.id
+          );
+          const totalSessions = courseAttendance.length;
+          const presentCount = courseAttendance.filter(
+            (r) => r.status === "present"
+          ).length;
+          const attendancePct =
+            totalSessions > 0
+              ? Math.round((presentCount / totalSessions) * 100)
+              : null;
+          const professorName =
+            selectedCourse.courses?.professors?.users?.name || null;
+
+          return (
+            <div>
+              <button
+                onClick={() => setSelectedCourse(null)}
+                className="flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-6 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to My Courses
+              </button>
+
+              <div className="mb-8">
+                <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">
+                  Course Detail
+                </p>
+                <h1 className="text-3xl font-semibold text-white tracking-tight">
+                  {selectedCourse.courses?.title || "Unknown Course"}
+                </h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                    {selectedCourse.courses?.code || "—"}
+                  </span>
+                  <span className="text-xs text-slate-500">
+                    {selectedCourse.courses?.credits || 0} credits
+                  </span>
+                  {selectedCourse.courses?.department && (
+                    <span className="text-xs text-slate-500">
+                      {selectedCourse.courses.department}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                  <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">Professor</p>
+                  {professorName ? (
+                    <p className="text-white font-semibold">{professorName}</p>
+                  ) : (
+                    <p className="text-slate-500 text-sm">Not assigned</p>
+                  )}
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                  <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Attendance</p>
+                  {attendancePct !== null ? (
+                    <>
+                      <p className="text-4xl font-semibold text-white mb-1">{attendancePct}%</p>
+                      <p className="text-xs text-slate-500">{presentCount} / {totalSessions} sessions</p>
+                    </>
+                  ) : (
+                    <p className="text-slate-500 text-sm">No records</p>
+                  )}
+                </div>
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+                  <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Grades</p>
+                  {courseGrades.length > 0 ? (
+                    <div className="space-y-2 mt-2">
+                      {courseGrades.map((g) => (
+                        <div key={g.id} className="flex items-center justify-between">
+                          <span className="text-sm text-slate-300">{g.grade_type || "Assessment"}</span>
+                          <span className={`text-sm font-semibold ${g.value >= 90 ? "text-emerald-400" : g.value >= 70 ? "text-blue-400" : g.value >= 50 ? "text-amber-400" : "text-rose-400"}`}>
+                            {g.value ?? "—"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500 text-sm mt-1">No grades recorded</p>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          );
+        }
+
         return (
           <div>
             <div className="mb-8">
@@ -347,7 +522,8 @@ export default function StudentDashboard() {
                 {courses.map((enrollment) => (
                   <div
                     key={enrollment.id}
-                    className="bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl p-6 transition-colors"
+                    onClick={() => setSelectedCourse(enrollment)}
+                    className="bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl p-6 transition-colors cursor-pointer"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
@@ -786,105 +962,343 @@ export default function StudentDashboard() {
           </div>
         );
 
-      case "transcript":
-        return (
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Transcript</h2>
-            {transcriptLoading ? (
-              <div className="text-slate-400">Loading transcript...</div>
-            ) : !transcript ? (
-              <div className="text-slate-400">Transcript not found</div>
-            ) : (
-              <div>
-                <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 mb-6">
-                  <h3 className="text-lg font-semibold text-white mb-2">
-                    Student Information
-                  </h3>
-                  <p className="text-slate-400">
-                    Name: {transcript.student?.users?.name}
-                  </p>
-                  <p className="text-slate-400">
-                    Email: {transcript.student?.users?.email}
-                  </p>
-                  <p className="text-slate-400">
-                    Major: {transcript.student?.major}
-                  </p>
-                  <p className="text-slate-400">
-                    Credits Earned: {transcript.student?.credits_earned}
-                  </p>
+      case "materials":
+        if (selectedMaterialsCourse) {
+          return (
+            <div>
+              <button
+                onClick={() => { setSelectedMaterialsCourse(null); setCourseMaterials([]); }}
+                className="flex items-center gap-2 text-slate-400 hover:text-white text-sm mb-6 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+                Back to Course Materials
+              </button>
+              <div className="mb-8">
+                <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Course Materials</p>
+                <h1 className="text-3xl font-semibold text-white tracking-tight">
+                  {selectedMaterialsCourse.courses?.title || "Unknown Course"}
+                </h1>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                    {selectedMaterialsCourse.courses?.code || "—"}
+                  </span>
                 </div>
-                <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-white mb-4">
-                    Course History
-                  </h3>
-                  <div className="space-y-2">
-                    {transcript.grades?.map((grade) => (
-                      <div
-                        key={grade.id}
-                        className="flex justify-between text-sm"
+              </div>
+              <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                {materialsLoading ? (
+                  <p className="text-slate-500 text-sm px-6 py-8 text-center">Loading materials…</p>
+                ) : courseMaterials.length === 0 ? (
+                  <p className="text-slate-500 text-sm px-6 py-8 text-center">No materials uploaded yet</p>
+                ) : (
+                  <div className="divide-y divide-slate-700/60">
+                    {courseMaterials.map((m) => (
+                      <a
+                        key={m.id}
+                        href={m.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-4 px-6 py-3 hover:bg-slate-700/40 transition-colors"
                       >
-                        <span className="text-slate-300">
-                          {grade.courses?.code} - {grade.courses?.title}
-                        </span>
-                        <span className="text-slate-400">
-                          Grade: {grade.value}% | Credits:{" "}
-                          {grade.credits?.credits}
-                        </span>
-                      </div>
+                        <svg className="w-4 h-4 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white truncate">{m.title || m.file_name}</p>
+                          {m.title && m.file_name && m.title !== m.file_name && (
+                            <p className="text-xs text-slate-500 truncate">{m.file_name}</p>
+                          )}
+                        </div>
+                        <svg className="w-4 h-4 text-slate-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                      </a>
                     ))}
                   </div>
-                </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        return (
+          <div>
+            <div className="mb-8">
+              <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Academic</p>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">Course Materials</h1>
+              <p className="text-slate-500 text-sm mt-1">Select a course to view its materials</p>
+            </div>
+            {coursesLoading ? (
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading courses…</div>
+            ) : courses.length === 0 ? (
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm">No courses enrolled</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {courses.map((enrollment) => (
+                  <button
+                    key={enrollment.id}
+                    onClick={() => {
+                      setSelectedMaterialsCourse(enrollment);
+                      setCourseMaterials([]);
+                      setMaterialsLoading(true);
+                      studentService
+                        .getCourseMaterials(enrollment.courses?.id)
+                        .then((res) => setCourseMaterials(res.data))
+                        .catch(() => setCourseMaterials([]))
+                        .finally(() => setMaterialsLoading(false));
+                    }}
+                    className="text-left bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl p-6 transition-colors"
+                  >
+                    <div className="flex items-start justify-between mb-3">
+                      <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                        {enrollment.courses?.code || "—"}
+                      </span>
+                      <span className="text-xs text-slate-500">{enrollment.courses?.credits || 0} credits</span>
+                    </div>
+                    <h3 className="text-white font-semibold">{enrollment.courses?.title || "Unknown Course"}</h3>
+                    <p className="text-xs text-slate-500 mt-2">
+                      {enrollment.courses?.professors?.users?.name || "No professor assigned"}
+                    </p>
+                  </button>
+                ))}
               </div>
             )}
           </div>
         );
 
+      case "transcript": {
+        const txGrades = transcript?.grades || [];
+        const gradesByCourse = txGrades.reduce((acc, g) => {
+          if (!acc[g.course_id]) acc[g.course_id] = [];
+          acc[g.course_id].push(g);
+          return acc;
+        }, {});
+        // Use enrollments as source of truth — shows all courses even with no grades
+        const courseList = courses.map((enrollment) => ({
+          info: enrollment.courses,
+          assessments: gradesByCourse[enrollment.courses?.id] || [],
+        }));
+        const totalCredits = courseList.reduce(
+          (sum, c) => sum + (c.info?.credits || 0), 0
+        );
+        const overallAvg =
+          txGrades.length > 0
+            ? Math.round(txGrades.reduce((s, g) => s + (g.value || 0), 0) / txGrades.length)
+            : null;
+
+        return (
+          <div>
+            <div className="mb-8">
+              <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">Academic</p>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">Transcript</h1>
+            </div>
+            {transcriptLoading ? (
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Loading transcript…</div>
+            ) : !transcript ? (
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm">Transcript not found</div>
+            ) : (
+              <div className="space-y-6">
+                {/* Student info */}
+                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Student</p>
+                      <h2 className="text-xl font-semibold text-white">{transcript.student?.users?.name || "—"}</h2>
+                      <p className="text-slate-400 text-sm mt-0.5">{transcript.student?.users?.email || "—"}</p>
+                      {transcript.student?.major && (
+                        <p className="text-slate-500 text-xs mt-1">{transcript.student.major}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-6 text-right">
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Credits</p>
+                        <p className="text-2xl font-semibold text-white">{totalCredits}</p>
+                      </div>
+                      {overallAvg !== null && (
+                        <div>
+                          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Avg Grade</p>
+                          <p className={`text-2xl font-semibold ${overallAvg >= 90 ? "text-emerald-400" : overallAvg >= 70 ? "text-blue-400" : overallAvg >= 50 ? "text-amber-400" : "text-rose-400"}`}>
+                            {overallAvg}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Course history */}
+                {courseList.length === 0 ? (
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl px-6 py-8 text-center text-slate-500 text-sm">No course history</div>
+                ) : (
+                  <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+                    <div className="px-6 py-4 border-b border-slate-700">
+                      <h2 className="text-sm font-semibold text-white">Course History</h2>
+                    </div>
+                    <div className="divide-y divide-slate-700/60">
+                      {courseList.map((course, idx) => {
+                        const avg = course.assessments.length > 0
+                          ? Math.round(course.assessments.reduce((s, a) => s + (a.value || 0), 0) / course.assessments.length)
+                          : null;
+                        return (
+                          <div key={course.info?.id || idx} className="px-6 py-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                                  {course.info?.code || "—"}
+                                </span>
+                                <span className="text-sm font-semibold text-white">{course.info?.title || "Unknown Course"}</span>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-slate-500">
+                                <span>{course.info?.credits || 0} credits</span>
+                                {avg !== null && (
+                                  <span className={`font-semibold text-sm ${avg >= 90 ? "text-emerald-400" : avg >= 70 ? "text-blue-400" : avg >= 50 ? "text-amber-400" : "text-rose-400"}`}>
+                                    {avg}%
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {course.assessments.length === 0 ? (
+                                <span className="text-xs text-slate-600 italic">No grades recorded</span>
+                              ) : course.assessments.map((a) => (
+                                <span key={a.id} className="text-xs text-slate-400 bg-slate-700/50 px-2 py-0.5 rounded">
+                                  {a.grade_type || "Assessment"}: <span className="text-white font-medium">{a.value ?? "—"}</span>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
+
       case "mia":
         return (
           <div>
             <h2 className="text-2xl font-bold mb-6">M.I.A AI Adviser</h2>
-            <div className="bg-slate-900 border border-slate-800 rounded-lg p-6">
-              <div className="h-96 overflow-y-auto mb-4 space-y-4">
-                {messages.length === 0 ? (
-                  <div className="text-slate-400">
-                    Start a conversation with M.I.A...
-                  </div>
-                ) : (
-                  messages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`p-3 rounded-lg ${
-                        msg.role === "user"
-                          ? "bg-blue-900/30 text-blue-300 ml-auto max-w-md"
-                          : "bg-slate-800 text-slate-300 max-w-md"
-                      }`}
-                    >
-                      <p className="text-sm font-semibold mb-1">
-                        {msg.role === "user" ? "You" : "M.I.A"}
-                      </p>
-                      <p>{msg.content}</p>
-                    </div>
-                  ))
-                )}
+            <div className="flex gap-4 h-[600px]">
+              {/* Sidebar */}
+              <div className="w-64 flex-shrink-0 bg-slate-900 border border-slate-800 rounded-lg flex flex-col">
+                <div className="p-3 border-b border-slate-800">
+                  <button
+                    onClick={startNewChat}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm transition"
+                  >
+                    + New Chat
+                  </button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-2 space-y-1">
+                  {sessionsLoading ? (
+                    <p className="text-slate-500 text-xs px-2 py-1">Loading...</p>
+                  ) : sessions.length === 0 ? (
+                    <p className="text-slate-500 text-xs px-2 py-1">No previous chats</p>
+                  ) : (
+                    sessions.map((s) => {
+                      const preview = sessionPreviews[s.id];
+                      const ts = s.started_at ? new Date(s.started_at) : null;
+                      const dateStr = ts
+                        ? ts.toLocaleDateString(undefined, { day: "numeric", month: "short" })
+                        : "";
+                      const timeStr = ts
+                        ? ts.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+                        : "";
+                      const isActive = selectedSessionId === s.id;
+                      return (
+                        <div
+                          key={s.id}
+                          className={`group flex items-start gap-1 rounded-lg text-sm transition ${
+                            isActive
+                              ? "bg-blue-700 text-white"
+                              : "text-slate-300 hover:bg-slate-800"
+                          }`}
+                        >
+                          <button
+                            onClick={() => loadSession(s.id)}
+                            className="flex-1 text-left px-3 py-2 min-w-0"
+                          >
+                            <p className={`font-medium truncate leading-snug ${preview ? "" : "text-slate-500 italic"}`}>
+                              {preview
+                                ? preview.length > 30
+                                  ? preview.slice(0, 30) + "…"
+                                  : preview
+                                : "Empty chat"}
+                            </p>
+                            <p className={`text-xs mt-0.5 ${isActive ? "text-blue-200" : "text-slate-500"}`}>
+                              {dateStr}{timeStr ? ` · ${timeStr}` : ""}
+                            </p>
+                          </button>
+                          <button
+                            onClick={(e) => deleteSession(e, s.id)}
+                            title="Delete chat"
+                            className={`opacity-0 group-hover:opacity-100 flex-shrink-0 p-2 mt-1 rounded transition ${
+                              isActive ? "hover:bg-blue-600 text-blue-200" : "hover:bg-slate-700 text-slate-500"
+                            }`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6M14 11v6" />
+                              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                            </svg>
+                          </button>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
               </div>
-              {chatError && <p className="text-rose-400 text-sm mb-2">{chatError}</p>}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-                  placeholder="Ask M.I.A anything about your academic journey..."
-                  className="flex-1 bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-blue-400"
-                  disabled={chatLoading}
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={chatLoading || !chatInput.trim()}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 text-white px-6 py-2 rounded-lg transition"
-                >
-                  {chatLoading ? "Sending..." : "Send"}
-                </button>
+
+              {/* Chat area */}
+              <div className="flex-1 bg-slate-900 border border-slate-800 rounded-lg flex flex-col p-4">
+                <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+                  {messages.length === 0 ? (
+                    <div className="text-slate-400">
+                      Start a conversation with M.I.A...
+                    </div>
+                  ) : (
+                    messages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-3 rounded-lg ${
+                          msg.role === "user"
+                            ? "bg-blue-900/30 text-blue-300 ml-auto max-w-md"
+                            : "bg-slate-800 text-slate-300 max-w-md"
+                        }`}
+                      >
+                        <p className="text-sm font-semibold mb-1">
+                          {msg.role === "user" ? "You" : "M.I.A"}
+                        </p>
+                        <p>{msg.content}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+                {chatError && <p className="text-rose-400 text-sm mb-2">{chatError}</p>}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                    placeholder="Ask M.I.A anything about your academic journey..."
+                    className="flex-1 bg-slate-800 border border-slate-700 text-white px-4 py-2 rounded-lg focus:outline-none focus:border-blue-400"
+                    disabled={chatLoading}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    disabled={chatLoading || !chatInput.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-700 text-white px-6 py-2 rounded-lg transition"
+                  >
+                    {chatLoading ? "Sending..." : "Send"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -901,7 +1315,7 @@ export default function StudentDashboard() {
         role="student"
         tabs={tabs}
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={(tab) => { setActiveTab(tab); setSelectedCourse(null); setSelectedMaterialsCourse(null); }}
       />
       <main className="p-8 max-w-6xl mx-auto">{renderTabContent()}</main>
     </div>

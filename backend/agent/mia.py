@@ -331,3 +331,12 @@ def get_chat_session_messages(session_id: str, authorization: Annotated[str, Hea
     token = authorization.replace("Bearer ", "")
     student_id = extract_student_id(token)
     return get_session_messages(student_id, session_id)
+
+
+@router.delete("/sessions/{session_id}", status_code=204)
+def delete_chat_session(session_id: str, authorization: Annotated[str, Header()]):
+    token = authorization.replace("Bearer ", "")
+    student_id = extract_student_id(token)
+    validate_chat_session(student_id, session_id)
+    supabase.table("messages").delete().eq("session_id", session_id).execute()
+    supabase.table("chat_sessions").delete().eq("id", session_id).eq("student_id", student_id).execute()

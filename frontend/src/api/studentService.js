@@ -13,8 +13,15 @@ export const studentService = {
     api.post(`/student/assignments/${assignmentId}/submit`, data),
 
   getTranscript: () => api.get("/student/transcript"),
+  getCourseMaterials: (courseId) => api.get(`/student/courses/${courseId}/materials`),
 };
 
 export const miaService = {
-  chat: (message) => api.post("/mia/chat", { message }),
+  chat: (message, sessionId) =>
+    api.post("/mia/chat", { message, session_id: sessionId || null }),
+  getSessions: () => api.get("/mia/sessions"),
+  getSessionMessages: (sessionId) =>
+    api.get(`/mia/sessions/${sessionId}/messages`),
+  deleteSession: (sessionId) =>
+    api.delete(`/mia/sessions/${sessionId}`),
 };

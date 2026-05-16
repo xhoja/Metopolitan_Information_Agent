@@ -18,7 +18,6 @@ const TABS = [
   { id: 'attendance',   label: 'Attendance' },
   { id: 'grades',       label: 'Grades' },
   { id: 'roles',        label: 'Role Assignment' },
-  { id: 'system',       label: 'System' },
 ]
 
 const ROLE_STYLES = {
@@ -271,54 +270,6 @@ export default function AdminDashboard() {
         {tab === 'grades'      && <GradesTab />}
 
         {/* SYSTEM TAB */}
-        {tab === 'system' && (
-          <div>
-            <div className="mb-8">
-              <p className="text-blue-300 text-xs font-medium uppercase tracking-[0.2em] mb-1">System</p>
-              <h1 className="text-3xl font-semibold text-white tracking-tight">System Overview</h1>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-              {[
-                { label: 'Total Users',    value: users.length,       color: 'text-white' },
-                { label: 'Students',       value: students.length,    color: 'text-blue-300' },
-                { label: 'Professors',     value: professors.length,  color: 'text-amber-400' },
-              ].map(s => (
-                <div key={s.label} className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-                  <p className={`text-4xl font-semibold ${s.color} mb-1`}>{s.value}</p>
-                  <p className="text-slate-500 text-sm">{s.label}</p>
-                </div>
-              ))}
-            </div>
-            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-slate-800">
-                <h2 className="text-sm font-semibold text-white">All Users</h2>
-              </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-800">
-                    {['Name', 'Email', 'Role', 'Joined'].map(h => (
-                      <th key={h} className="text-left px-6 py-4 text-slate-500 font-medium text-xs uppercase tracking-widest">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map((user, i) => (
-                    <tr key={user.id} className={`border-b border-slate-800/60 hover:bg-slate-950/40 transition-colors ${i === users.length - 1 ? 'border-b-0' : ''}`}>
-                      <td className="px-6 py-4 font-medium text-white">{user.name}</td>
-                      <td className="px-6 py-4 text-slate-400 text-xs" style={{ fontFamily: "'DM Mono', monospace" }}>{user.email}</td>
-                      <td className="px-6 py-4">
-                        <span className={`text-xs font-medium px-2.5 py-1 rounded-md capitalize ${ROLE_STYLES[user.role] || ''}`}>{user.role}</span>
-                      </td>
-                      <td className="px-6 py-4 text-slate-500 text-xs">
-                        {user.created_at ? new Date(user.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
 
       </main>
 
