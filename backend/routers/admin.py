@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Header
 from pydantic import BaseModel
-from models import UserCreate
+from models import UserCreate, UserUpdate
 from db import supabase
 from routers.auth import hash_password, decode_token
 import datetime
@@ -55,14 +55,20 @@ def get_all_users(authorization: str = Header(...)):
     return res.data
 
 @router.put("/users/{user_id}")
-def update_user(user_id: str, data: UserCreate, authorization: str = Header(...)):
+def update_user(user_id: str, data: UserUpdate, authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     require_admin(token)
-    supabase.table("users").update({
-        "name": data.name,
-        "email": data.email,
-        "role": data.role
-    }).eq("id", user_id).execute()
+    update_fields = {}
+    if data.name is not None:
+        update_fields["name"] = data.name
+    if data.email is not None:
+        update_fields["email"] = data.email
+    if data.role is not None:
+        update_fields["role"] = data.role
+    if data.password:
+        update_fields["password_hash"] = hash_password(data.password)
+    if update_fields:
+        supabase.table("users").update(update_fields).eq("id", user_id).execute()
     return {"message": "User updated"}
 
 @router.delete("/users/{user_id}")

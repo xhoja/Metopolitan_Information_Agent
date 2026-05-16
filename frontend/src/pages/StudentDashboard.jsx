@@ -33,8 +33,8 @@ export default function StudentDashboard() {
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState("");
 
-  const [courseActiveSubTabs, setCourseActiveSubTabs] = useState({});
 
   useEffect(() => {
     studentService
@@ -80,6 +80,7 @@ export default function StudentDashboard() {
     if (!chatInput.trim()) return;
 
     setChatLoading(true);
+    setChatError("");
     miaService
       .chat(chatInput)
       .then((res) => {
@@ -90,7 +91,10 @@ export default function StudentDashboard() {
         ]);
         setChatInput("");
       })
-      .catch((err) => console.error("Chat error:", err))
+      .catch((err) => {
+        console.error("Chat error:", err);
+        setChatError(err.response?.data?.detail || "Failed to reach M.I.A. Check that the backend is running.");
+      })
       .finally(() => setChatLoading(false));
   };
 
@@ -640,90 +644,7 @@ export default function StudentDashboard() {
                           />
                         </div>
 
-                        {/* Tabs */}
-                        <div className="border-b border-slate-700 mb-6">
-                          <div className="flex gap-8">
-                            <button
-                              onClick={() =>
-                                setCourseActiveSubTabs((prev) => ({
-                                  ...prev,
-                                  [course.courseId || index]: "attendance",
-                                }))
-                              }
-                              className={`pb-2 text-sm font-medium transition ${
-                                courseActiveSubTabs[
-                                  course.courseId || index
-                                ] !== "interim"
-                                  ? "text-white border-b-2 border-blue-500"
-                                  : "text-slate-400 hover:text-white"
-                              }`}
-                            >
-                              Attendance
-                            </button>
-                            <button
-                              onClick={() =>
-                                setCourseActiveSubTabs((prev) => ({
-                                  ...prev,
-                                  [course.courseId || index]: "interim",
-                                }))
-                              }
-                              className={`pb-2 text-sm font-medium transition ${
-                                courseActiveSubTabs[
-                                  course.courseId || index
-                                ] === "interim"
-                                  ? "text-white border-b-2 border-blue-500"
-                                  : "text-slate-400 hover:text-white"
-                              }`}
-                            >
-                              Interim Grades
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Content based on active sub-tab */}
-                        {courseActiveSubTabs[course.courseId || index] ===
-                        "interim" ? (
-                          /* Interim Grades View */
-                          <div className="space-y-4">
-                            {grades.length > 0 ? (
-                              grades
-                                .filter(
-                                  (grade) =>
-                                    grade.courses?.code === course.courseCode,
-                                )
-                                .map((grade) => (
-                                  <div
-                                    key={grade.id}
-                                    className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50"
-                                  >
-                                    <div className="flex justify-between items-center">
-                                      <div>
-                                        <p className="text-white font-medium">
-                                          {grade.courses?.title}
-                                        </p>
-                                        <p className="text-sm text-slate-400">
-                                          Grade: {grade.value}%
-                                        </p>
-                                      </div>
-                                      <div className="text-right">
-                                        <p className="text-2xl font-bold text-green-400">
-                                          {grade.value}%
-                                        </p>
-                                        <p className="text-xs text-slate-400">
-                                          Current Grade
-                                        </p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))
-                            ) : (
-                              <div className="text-center py-8 text-slate-400">
-                                No interim grades available for this course yet.
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          /* Attendance Records List */
+                        {/* Attendance Records List */}
                           <div className="space-y-3">
                             {sortedRecords.map((record) => (
                               <div
@@ -746,23 +667,11 @@ export default function StudentDashboard() {
                                     </p>
                                     <div className="flex items-center gap-3 mt-1">
                                       <span className="text-sm text-slate-400">
-                                        {record.hours_present}/2h attended
-                                      </span>
-                                      <span
-                                        className={`text-xs px-2 py-1 rounded-full ${
-                                          record.session_start?.includes(
-                                            "Theory",
-                                          ) ||
-                                          record.session_start?.includes("T")
-                                            ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
-                                            : "bg-green-500/20 text-green-300 border border-green-500/30"
-                                        }`}
-                                      >
-                                        {record.session_start?.includes(
-                                          "Theory",
-                                        ) || record.session_start?.includes("T")
-                                          ? "theory"
-                                          : "lab"}
+                                        {(() => {
+                                          const toMins = t => { const [h, m] = (t || '').split(':').map(Number); return h * 60 + (m || 0) }
+                                          const duration = (toMins(record.session_end) - toMins(record.session_start)) / 60
+                                          return `${record.hours_present}/${duration > 0 ? duration : '?'}h attended`
+                                        })()}
                                       </span>
                                     </div>
                                   </div>
@@ -775,7 +684,6 @@ export default function StudentDashboard() {
                               </div>
                             ))}
                           </div>
-                        )}
 
                         {/* Grade Info - only show if course is finalized */}
                         {isFinalized && (
@@ -959,6 +867,7 @@ export default function StudentDashboard() {
                   ))
                 )}
               </div>
+              {chatError && <p className="text-rose-400 text-sm mb-2">{chatError}</p>}
               <div className="flex gap-2">
                 <input
                   type="text"

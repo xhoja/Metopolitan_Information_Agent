@@ -16,9 +16,8 @@ class ChatResponse(BaseModel):
 
 class SessionRead(BaseModel):
     id: str
-    title: Optional[str] = None
-    created_at: Optional[datetime.datetime] = None
-    updated_at: Optional[datetime.datetime] = None
+    started_at: Optional[datetime.datetime] = None
+    ended_at: Optional[datetime.datetime] = None
 
 
 class MessageRead(BaseModel):

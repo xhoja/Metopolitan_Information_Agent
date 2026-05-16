@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Header, UploadFile, File, Form
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
+import json
 from db import supabase
 from routers.auth import decode_token
 from datetime import datetime as dt
@@ -177,25 +178,26 @@ async def create_assignment(
     type: str = Form(...),
     description: Optional[str] = Form(None),
     due_date: Optional[str] = Form(None),
-    file: Optional[UploadFile] = File(None),
+    files: List[UploadFile] = File(default=[]),
     authorization: str = Header(...),
 ):
-    file_url = None
-    file_name = None
-    if file and file.filename:
-        file_bytes = await file.read()
-        stored_name = f"{uuid.uuid4()}_{file.filename}"
-        supabase.storage.from_("materials").upload(stored_name, file_bytes, {"content-type": file.content_type})
-        file_url = supabase.storage.from_("materials").get_public_url(stored_name)
-        file_name = file.filename
+    file_urls = []
+    file_names = []
+    for file in files:
+        if file and file.filename:
+            file_bytes = await file.read()
+            stored_name = f"{uuid.uuid4()}_{file.filename}"
+            supabase.storage.from_("materials").upload(stored_name, file_bytes, {"content-type": file.content_type})
+            file_urls.append(supabase.storage.from_("materials").get_public_url(stored_name))
+            file_names.append(file.filename)
     res = supabase.table("assignments").insert({
         "title": title,
         "description": description,
         "due_date": due_date,
         "course_id": course_id,
         "type": type,
-        "file_url": file_url,
-        "file_name": file_name,
+        "file_url": json.dumps(file_urls) if file_urls else None,
+        "file_name": json.dumps(file_names) if file_names else None,
     }).execute()
     return res.data[0]
 
@@ -239,19 +241,25 @@ def get_materials(course_id: str, authorization: str = Header(...)):
 async def upload_material(
     course_id: str,
     title: str = Form(...),
-    file: UploadFile = File(...),
+    files: List[UploadFile] = File(...),
     authorization: str = Header(...)
 ):
     token = authorization.replace("Bearer ", "")
     get_professor_id(token)
-    file_bytes = await file.read()
-    file_name = f"{uuid.uuid4()}_{file.filename}"
-    supabase.storage.from_("materials").upload(file_name, file_bytes, {"content-type": file.content_type})
-    file_url = supabase.storage.from_("materials").get_public_url(file_name)
-    res = supabase.table("materials").insert({
-        "course_id": course_id,
-        "title": title,
-        "file_url": file_url,
-        "file_name": file.filename
-    }).execute()
-    return res.data[0]
+    inserted = []
+    for i, file in enumerate(files):
+        if not file.filename:
+            continue
+        file_bytes = await file.read()
+        stored_name = f"{uuid.uuid4()}_{file.filename}"
+        supabase.storage.from_("materials").upload(stored_name, file_bytes, {"content-type": file.content_type})
+        file_url = supabase.storage.from_("materials").get_public_url(stored_name)
+        file_title = title if len(files) == 1 else (f"{title} ({i + 1})" if title else file.filename)
+        res = supabase.table("materials").insert({
+            "course_id": course_id,
+            "title": file_title,
+            "file_url": file_url,
+            "file_name": file.filename
+        }).execute()
+        inserted.append(res.data[0])
+    return inserted

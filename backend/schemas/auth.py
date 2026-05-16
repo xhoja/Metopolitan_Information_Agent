@@ -39,6 +39,10 @@ class UserUpdate(BaseModel):
     name: Optional[str] = None
     email: Optional[EmailStr] = None
     role: Optional[UserRole] = None
+    password: Optional[str] = None
+    major: Optional[str] = None
+    department: Optional[str] = None
+    title: Optional[str] = None
 
     @field_validator("name")
     @classmethod
@@ -46,6 +50,13 @@ class UserUpdate(BaseModel):
         if v is not None and not v.strip():
             raise ValueError("name must not be blank")
         return v.strip() if v else v
+
+    @field_validator("password")
+    @classmethod
+    def password_min_length(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v != "" and len(v) < 6:
+            raise ValueError("password must be at least 6 characters")
+        return v if v else None
 
 
 class UserRead(BaseModel):

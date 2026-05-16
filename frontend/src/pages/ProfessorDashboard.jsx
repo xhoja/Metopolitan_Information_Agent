@@ -44,7 +44,7 @@ export default function ProfessorDashboard() {
   const [materials, setMaterials]       = useState([])
   const [matLoading, setMatLoading]     = useState(false)
   const [matError, setMatError]         = useState('')
-  const [matFile, setMatFile]           = useState(null)
+  const [matFiles, setMatFiles]         = useState([])
   const [matTitle, setMatTitle]         = useState('')
   const [matUploading, setMatUploading] = useState(false)
   const [matUploadErr, setMatUploadErr] = useState('')
@@ -58,7 +58,7 @@ export default function ProfessorDashboard() {
   const [assignForm, setAssignForm]               = useState(EMPTY_ASSIGNMENT)
   const [assignSaving, setAssignSaving]           = useState(false)
   const [assignError, setAssignError]             = useState('')
-  const [assignFile, setAssignFile]               = useState(null)
+  const [assignFiles, setAssignFiles]             = useState([])
 
   // grades tab
   const [gradeForm, setGradeForm]         = useState(EMPTY_GRADE)
@@ -120,23 +120,23 @@ export default function ProfessorDashboard() {
 
   const handleUploadMaterial = async (e) => {
     e.preventDefault()
-    if (!matFile) return
+    if (!matFiles.length) return
     setMatUploading(true)
     setMatUploadErr('')
     setMatUploadOk('')
     try {
       const formData = new FormData()
-      formData.append('file', matFile)
-      formData.append('title', matTitle || matFile.name)
+      matFiles.forEach(f => formData.append('files', f))
+      formData.append('title', matTitle || matFiles[0].name)
       formData.append('course_id', matCourse)
       await api.post(`/professor/courses/${matCourse}/materials`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       })
       const r = await api.get(`/professor/courses/${matCourse}/materials`)
       setMaterials(r.data)
-      setMatFile(null)
+      setMatFiles([])
       setMatTitle('')
-      setMatUploadOk('File uploaded successfully.')
+      setMatUploadOk(`${matFiles.length} file${matFiles.length > 1 ? 's' : ''} uploaded successfully.`)
       e.target.reset()
     } catch (err) {
       setMatUploadErr(err.response?.data?.detail || 'Upload failed. Endpoint may not be implemented yet.')
@@ -192,12 +192,12 @@ export default function ProfessorDashboard() {
       fd.append('type', assignForm.type)
       if (assignForm.description) fd.append('description', assignForm.description)
       if (assignForm.due_date) fd.append('due_date', assignForm.due_date)
-      if (assignFile) fd.append('file', assignFile)
+      assignFiles.forEach(f => fd.append('files', f))
       const res = await api.post('/professor/assignments', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
       setAssignments(a => [...a, res.data])
       setAssignModal(false)
       setAssignForm({ ...EMPTY_ASSIGNMENT, course_id: selectedCourse })
-      setAssignFile(null)
+      setAssignFiles([])
     } catch (err) {
       setAssignError(err.response?.data?.detail || 'Failed to create assignment.')
     } finally {
@@ -495,32 +495,33 @@ export default function ProfessorDashboard() {
                           className="input-base"
                         />
                       </Field>
-                      <Field label="File">
+                      <Field label="Files">
                         <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-700 rounded-lg cursor-pointer hover:border-amber-500/50 transition-colors bg-slate-950/50">
                           <div className="flex flex-col items-center gap-2 text-center px-4">
-                            {matFile ? (
+                            {matFiles.length > 0 ? (
                               <>
                                 <svg className="w-6 h-6 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
                                 </svg>
-                                <p className="text-amber-300 text-sm font-medium truncate max-w-full">{matFile.name}</p>
-                                <p className="text-slate-500 text-xs">{(matFile.size / 1024).toFixed(1)} KB</p>
+                                <p className="text-amber-300 text-sm font-medium">{matFiles.length} file{matFiles.length > 1 ? 's' : ''} selected</p>
+                                <p className="text-slate-500 text-xs truncate max-w-full">{matFiles.map(f => f.name).join(', ')}</p>
                               </>
                             ) : (
                               <>
                                 <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                                 </svg>
-                                <p className="text-slate-400 text-sm">Click to select file</p>
-                                <p className="text-slate-600 text-xs">PDF, PPTX, DOCX, ZIP…</p>
+                                <p className="text-slate-400 text-sm">Click to select files</p>
+                                <p className="text-slate-600 text-xs">PDF, PPTX, DOCX, ZIP… (multiple allowed)</p>
                               </>
                             )}
                           </div>
                           <input
                             type="file"
+                            multiple
                             className="hidden"
                             accept=".pdf,.pptx,.ppt,.docx,.doc,.zip,.txt,.xlsx,.xls"
-                            onChange={e => { setMatFile(e.target.files[0] || null); setMatUploadOk(''); setMatUploadErr('') }}
+                            onChange={e => { setMatFiles(Array.from(e.target.files)); setMatUploadOk(''); setMatUploadErr('') }}
                           />
                         </label>
                       </Field>
@@ -528,7 +529,7 @@ export default function ProfessorDashboard() {
                       {matUploadOk  && <p className="text-emerald-400 text-sm">{matUploadOk}</p>}
                       <button
                         type="submit"
-                        disabled={matUploading || !matFile}
+                        disabled={matUploading || !matFiles.length}
                         className="bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition flex items-center justify-center gap-2"
                       >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -659,9 +660,13 @@ export default function ProfessorDashboard() {
                         </td>
                         <td className="px-6 py-4 text-slate-400 text-sm max-w-xs truncate">{a.description || '—'}</td>
                         <td className="px-6 py-4">
-                          {a.file_url
-                            ? <a href={a.file_url} target="_blank" rel="noreferrer" className="text-xs text-amber-400 hover:text-amber-300 underline truncate block max-w-[140px]">{a.file_name || 'Download'}</a>
-                            : <span className="text-slate-600">—</span>}
+                          {(() => {
+                            let urls = [], names = []
+                            try { const u = JSON.parse(a.file_url); const n = JSON.parse(a.file_name); urls = Array.isArray(u) ? u : (u ? [u] : []); names = Array.isArray(n) ? n : (n ? [n] : []) } catch { urls = a.file_url ? [a.file_url] : []; names = a.file_name ? [a.file_name] : [] }
+                            return urls.length > 0
+                              ? <div className="flex flex-col gap-1">{urls.map((url, i) => <a key={i} href={url} target="_blank" rel="noreferrer" className="text-xs text-amber-400 hover:text-amber-300 underline truncate block max-w-[140px]">{names[i] || `File ${i + 1}`}</a>)}</div>
+                              : <span className="text-slate-600">—</span>
+                          })()}
                         </td>
                         <td className="px-6 py-4">
                           <button onClick={() => handleDeleteAssignment(a.id)} className="text-slate-500 hover:text-rose-400 transition-colors" title="Delete">
@@ -1053,16 +1058,18 @@ export default function ProfessorDashboard() {
             <Field label="Description">
               <textarea value={assignForm.description} onChange={e => setAssignForm(f => ({ ...f, description: e.target.value }))} placeholder="Instructions…" rows={3} className="input-base resize-none" />
             </Field>
-            <Field label="Attachment (PDF / DOC / DOCX — optional)">
+            <Field label="Attachments (PDF / DOC / DOCX — optional, multiple allowed)">
               <label className="flex items-center gap-3 cursor-pointer w-full border border-dashed border-slate-600 hover:border-amber-600 rounded-lg px-4 py-3 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-slate-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 12V4m0 8l-3-3m3 3l3-3" /></svg>
-                <span className="text-sm text-slate-400 truncate">{assignFile ? assignFile.name : 'Click to upload file'}</span>
-                <input type="file" accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={e => setAssignFile(e.target.files[0] || null)} />
+                <span className="text-sm text-slate-400 truncate">
+                  {assignFiles.length > 0 ? `${assignFiles.length} file${assignFiles.length > 1 ? 's' : ''}: ${assignFiles.map(f => f.name).join(', ')}` : 'Click to upload files'}
+                </span>
+                <input type="file" multiple accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" className="hidden" onChange={e => setAssignFiles(Array.from(e.target.files))} />
               </label>
             </Field>
             {assignError && <p className="text-rose-400 text-sm">{assignError}</p>}
             <div className="flex gap-3 pt-1">
-              <button type="button" onClick={() => { setAssignModal(false); setAssignFile(null) }} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium py-2.5 rounded-lg transition">Cancel</button>
+              <button type="button" onClick={() => { setAssignModal(false); setAssignFiles([]) }} className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium py-2.5 rounded-lg transition">Cancel</button>
               <button type="submit" disabled={assignSaving} className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white text-sm font-medium py-2.5 rounded-lg transition">
                 {assignSaving ? 'Creating…' : 'Create Assignment'}
               </button>

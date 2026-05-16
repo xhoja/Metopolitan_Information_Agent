@@ -45,7 +45,7 @@ def load_chat_history(session_id: str) -> list[dict]:
 
 
 def list_student_sessions(student_id: str) -> list[dict]:
-    res = supabase.table("chat_sessions").select("id, title, created_at, updated_at").eq("student_id", student_id).order("created_at", desc=True).execute()
+    res = supabase.table("chat_sessions").select("id, started_at, ended_at").eq("student_id", student_id).order("started_at", desc=True).execute()
     return res.data or []
 
 
@@ -114,7 +114,7 @@ def fetch_student_profile(student_id: str) -> Dict[str, Any]:
             "gpa": gpa,
             "attendance": attendance_stats,
             "total_credits": sum(e["courses"]["credits"] for e in enrollments.data) if enrollments.data else 0,
-            "preferences": [p["value"] for p in preferences.data] if preferences.data else [],
+            "preferences": [p["preference_text"] for p in preferences.data] if preferences.data else [],
         }
         
         return profile
@@ -282,20 +282,38 @@ def chat(req: ChatRequest, authorization: Annotated[Optional[str], Header()] = N
         profile = fetch_student_profile(student_id)
         student_context = build_student_context(profile)
 
-        if session_id:
-            session_id = validate_chat_session(student_id, session_id)
-        else:
-            session_id = create_chat_session(student_id)
+        history = []
+        try:
+            if session_id:
+                session_id = validate_chat_session(student_id, session_id)
+            else:
+                session_id = create_chat_session(student_id)
+            history = load_chat_history(session_id)
+            save_chat_message(session_id, "user", req.message)
+        except Exception as e:
+            print(f"Session/history DB error (chat will continue without persistence): {e}")
+            session_id = session_id or "temporary"
 
-        history = load_chat_history(session_id)
-        save_chat_message(session_id, "user", req.message)
-        answer = call_model(history + [{"role": "user", "content": req.message}], student_context)
-        save_chat_message(session_id, "assistant", answer)
+        try:
+            answer = call_model(history + [{"role": "user", "content": req.message}], student_context)
+        except Exception as e:
+            raise HTTPException(status_code=503, detail=f"AI service unavailable: {str(e)}")
+
+        try:
+            if session_id != "temporary":
+                save_chat_message(session_id, "assistant", answer)
+        except Exception as e:
+            print(f"Failed to save assistant message: {e}")
+
         return {"response": answer, "session_id": session_id}
 
     # Fallback when no authorization is provided: keep in-memory history only
     chat_history.append({"role": "user", "content": req.message})
-    answer = call_model(chat_history, student_context)
+    try:
+        answer = call_model(chat_history, student_context)
+    except Exception as e:
+        chat_history.pop()
+        raise HTTPException(status_code=503, detail=f"AI service unavailable: {str(e)}")
     chat_history[:] = chat_history[-10:]
     chat_history.append({"role": "assistant", "content": answer})
     return {"response": answer, "session_id": session_id or "temporary"}
