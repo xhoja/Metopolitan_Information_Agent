@@ -7,6 +7,7 @@ import CoursesTab    from '../components/admin/CoursesTab'
 import EnrollmentsTab from '../components/admin/EnrollmentsTab'
 import AttendanceTab from '../components/admin/AttendanceTab'
 import GradesTab     from '../components/admin/GradesTab'
+import FinanceTab    from '../components/admin/FinanceTab'
 
 const TABS = [
   { id: 'overview',     label: 'Overview' },
@@ -18,6 +19,7 @@ const TABS = [
   { id: 'attendance',   label: 'Attendance' },
   { id: 'grades',       label: 'Grades' },
   { id: 'roles',        label: 'Role Assignment' },
+  { id: 'finance',      label: 'Finance' },
 ]
 
 const ROLE_STYLES = {
@@ -59,7 +61,15 @@ export default function AdminDashboard() {
 
   const openCreate = () => { setForm(EMPTY_FORM); setFormError(''); setModal('create') }
   const openEdit   = (user) => {
-    setForm({ name: user.name, email: user.email, password: '', role: user.role, major: '', department: '', title: '' })
+    setForm({
+      name: user.name,
+      email: user.email,
+      password: '',
+      role: user.role,
+      major: user.major || '',
+      department: user.department || '',
+      title: user.title || '',
+    })
     setFormError('')
     setModal(user)
   }
@@ -262,12 +272,13 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {tab === 'students'    && <StudentsTab   users={users} onRemove={setDeleteTarget} />}
-        {tab === 'professors'  && <ProfessorsTab users={users} onRemove={setDeleteTarget} />}
+        {tab === 'students'    && <StudentsTab   users={users} onRemove={setDeleteTarget} onEdit={openEdit} />}
+        {tab === 'professors'  && <ProfessorsTab users={users} onRemove={setDeleteTarget} onEdit={openEdit} />}
         {tab === 'courses'     && <CoursesTab />}
         {tab === 'enrollments' && <EnrollmentsTab />}
         {tab === 'attendance'  && <AttendanceTab />}
         {tab === 'grades'      && <GradesTab />}
+        {tab === 'finance'     && <FinanceTab />}
 
         {/* SYSTEM TAB */}
 

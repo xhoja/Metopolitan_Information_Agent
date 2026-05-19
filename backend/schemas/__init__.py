@@ -6,3 +6,4 @@ from .attendance import AttendanceCreate, AttendanceUpdate, AttendanceRead
 from .assignment import AssignmentCreate, AssignmentUpdate, AssignmentRead
 from .submission import SubmissionCreate, SubmissionRead
 from .mia import ChatRequest, ChatResponse, SessionRead, MessageRead, PreferenceCreate, PreferenceRead
+from .finance import MajorFeeCreate, MajorFeeUpdate, StudentFeeCreate, InstallmentCreate, InstallmentUpdate, TransactionCreate

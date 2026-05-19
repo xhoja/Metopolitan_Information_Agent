@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function ProfessorsTab({ users, onRemove }) {
+export default function ProfessorsTab({ users, onRemove, onEdit }) {
   const [search, setSearch] = useState('')
   const professors = users.filter(u => u.role === 'professor')
   const filtered = professors.filter(p =>
@@ -50,15 +50,30 @@ export default function ProfessorsTab({ users, onRemove }) {
                     {p.created_at ? new Date(p.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                   </td>
                   <td className="px-6 py-4 text-right">
-                    {onRemove && (
-                      <button
-                        onClick={() => onRemove(p)}
-                        className="text-slate-500 hover:text-rose-400 transition-colors p-1 rounded hover:bg-slate-700 text-base leading-none"
-                        title="Remove professor"
-                      >
-                        ×
-                      </button>
-                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      {onEdit && (
+                        <button
+                          onClick={() => onEdit(p)}
+                          className="text-slate-500 hover:text-blue-300 transition-colors p-1.5 rounded hover:bg-slate-700"
+                          title="Edit professor"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 013.182 3.182L6.75 19.963l-4.5 1.5 1.5-4.5L16.862 3.487z" />
+                          </svg>
+                        </button>
+                      )}
+                      {onRemove && (
+                        <button
+                          onClick={() => onRemove(p)}
+                          className="text-slate-500 hover:text-rose-400 transition-colors p-1.5 rounded hover:bg-slate-700"
+                          title="Remove professor"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -12,7 +12,7 @@ M.I.A (Metropolitan Information Agent) is a full-stack web application that serv
 
 The standout feature is **M.I.A**, an AI-powered academic adviser integrated exclusively into the student portal, giving students instant, personalised answers about their academic journey.
 
-The system covers every aspect of university operations except the finance department, making it a near-complete institutional platform built for real-world use.
+The system covers every aspect of university operations including a finance module built beyond the original project scope, making it a near-complete institutional platform built for real-world use.
 
 ---
 
@@ -35,6 +35,7 @@ The system covers every aspect of university operations except the finance depar
 - Create and manage all user accounts (students and professors)
 - Assign and update user roles across the system
 - Full system oversight — access to all records, courses, and activity
+- **Finance management** *(beyond original scope)* — configure tuition fees per major, auto-assign fee records and installment plans to students, record payments and track settlement status
 
 ### Professor Dashboard
 - Upload and manage courses and course materials
@@ -49,6 +50,7 @@ The system covers every aspect of university operations except the finance depar
 - View attendance records per course
 - Access and download academic transcript
 - View and submit assignments and projects
+- **Finance tab** *(beyond original scope)* — view tuition fee balance, installment schedule, payment status, and transaction history
 - **M.I.A AI Adviser** — Conversational AI that answers academic questions, recommends courses, checks graduation progress, and remembers student preferences
 
 ### M.I.A — AI Agent *(Student Portal Only)*
@@ -285,11 +287,20 @@ This project uses **GitHub Desktop** and follows a feature-branch workflow. No d
 
 ## Out of Scope
 
-The following feature is intentionally excluded from M.I.A in this version:
+The following was originally excluded from M.I.A but a **basic finance module was added beyond the defined project scope** as an extension:
 
-- Finance and tuition management (payments, scholarships, billing)
+**Implemented (extra):**
+- Tuition fee configuration per major
+- Auto-assignment of fee records and installment plans to students
+- Payment recording and settlement tracking (admin-side only)
+- Student finance view — balance, installments, transactions
 
-This may be considered for a future release.
+**Not implemented:**
+- Scholarship management — no partial fee waivers, scholarship applications, or grant tracking
+- Online payment gateway — payments are recorded manually by admin; no card/bank integration
+- Invoice/receipt generation — no downloadable PDF documents
+
+These may be considered for a future release.
 
 ---
 

@@ -14,6 +14,7 @@ export const studentService = {
 
   getTranscript: () => api.get("/student/transcript"),
   getCourseMaterials: (courseId) => api.get(`/student/courses/${courseId}/materials`),
+  getFinance: () => api.get("/student/finance"),
 };
 
 export const miaService = {

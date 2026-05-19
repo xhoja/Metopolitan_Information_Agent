@@ -10,6 +10,7 @@ const tabs = [
   { id: "assignments", label: "Assignments" },
   { id: "materials", label: "Course Materials" },
   { id: "transcript", label: "Transcript" },
+  { id: "finance", label: "Finance" },
   { id: "mia", label: "M.I.A Chat" },
 ];
 
@@ -34,6 +35,9 @@ export default function StudentDashboard() {
 
   const [transcript, setTranscript] = useState(null);
   const [transcriptLoading, setTranscriptLoading] = useState(true);
+
+  const [finance, setFinance] = useState(null);
+  const [financeLoading, setFinanceLoading] = useState(true);
 
   const [messages, setMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
@@ -84,6 +88,14 @@ export default function StudentDashboard() {
       .then((res) => setTranscript(res.data))
       .catch((err) => console.error("Transcript error:", err))
       .finally(() => setTranscriptLoading(false));
+  }, []);
+
+  useEffect(() => {
+    studentService
+      .getFinance()
+      .then((res) => setFinance(res.data))
+      .catch((err) => console.error("Finance error:", err))
+      .finally(() => setFinanceLoading(false));
   }, []);
 
   useEffect(() => {
@@ -1179,6 +1191,84 @@ export default function StudentDashboard() {
         );
       }
 
+      case "finance": {
+        const fee = finance?.fee;
+        const installments = finance?.installments || [];
+        const transactions = finance?.transactions || [];
+        const status = fee?.status || "pending";
+        const fmt = (n) =>
+          Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        return (
+          <div>
+            <div className="mb-8">
+              <p className="text-amber-500 text-xs font-medium uppercase tracking-[0.2em] mb-1">
+                Financial
+              </p>
+              <h1 className="text-3xl font-semibold text-white tracking-tight">Finance</h1>
+            </div>
+
+            {financeLoading ? (
+              <div className="flex items-center justify-center py-24 text-slate-500 text-sm">
+                Loading finance…
+              </div>
+            ) : !fee ? (
+              <div className="flex flex-col items-center justify-center py-24 gap-3 bg-slate-800 border border-slate-700 rounded-xl">
+                <p className="text-slate-400 text-sm font-medium">No fee record assigned yet.</p>
+                <p className="text-slate-600 text-xs">Contact administration to set up your payment plan.</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary cards */}
+                <div className="grid grid-cols-3 gap-4 mb-8">
+                  <div className="bg-blue-600/20 border border-blue-500/30 rounded-xl p-5">
+                    <p className="text-xs text-blue-300 uppercase tracking-widest mb-1">Agreed Amount</p>
+                    <p className="text-3xl font-semibold text-white">{fmt(fee.agreed_amount)}</p>
+                    <p className="text-xs text-blue-400 mt-1">{fee.academic_year}</p>
+                  </div>
+                  <div className="bg-emerald-600/20 border border-emerald-500/30 rounded-xl p-5">
+                    <p className="text-xs text-emerald-300 uppercase tracking-widest mb-1">Paid Amount</p>
+                    <p className="text-3xl font-semibold text-white">{fmt(fee.paid_amount)}</p>
+                    <p className="text-xs text-emerald-400 mt-1">
+                      {fmt(Number(fee.agreed_amount) - Number(fee.paid_amount))} remaining
+                    </p>
+                  </div>
+                  <div
+                    className={`rounded-xl p-5 border ${
+                      status === "settled"
+                        ? "bg-emerald-600/20 border-emerald-500/30"
+                        : status === "partial"
+                          ? "bg-amber-600/20 border-amber-500/30"
+                          : "bg-rose-600/20 border-rose-500/30"
+                    }`}
+                  >
+                    <p
+                      className={`text-xs uppercase tracking-widest mb-1 ${
+                        status === "settled"
+                          ? "text-emerald-300"
+                          : status === "partial"
+                            ? "text-amber-300"
+                            : "text-rose-300"
+                      }`}
+                    >
+                      Status
+                    </p>
+                    <p className="text-3xl font-semibold text-white capitalize">{status}</p>
+                  </div>
+                </div>
+
+                {/* Sub-tabs */}
+                <FinanceSubTabs
+                  installments={installments}
+                  transactions={transactions}
+                  fmt={fmt}
+                />
+              </>
+            )}
+          </div>
+        );
+      }
+
       case "mia":
         return (
           <div>
@@ -1329,6 +1419,103 @@ function StatCard({ label, value, color }) {
       <p className="text-slate-500 text-sm uppercase tracking-[0.1em]">
         {label}
       </p>
+    </div>
+  );
+}
+
+function FinanceSubTabs({ installments, transactions, fmt }) {
+  const [sub, setSub] = useState("installments");
+  return (
+    <div>
+      <div className="flex gap-1 mb-6 bg-slate-800/60 p-1 rounded-lg border border-slate-700 w-fit">
+        {[{ id: "installments", label: "Installments" }, { id: "transactions", label: "Transactions" }].map((t) => (
+          <button
+            key={t.id}
+            onClick={() => setSub(t.id)}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition ${sub === t.id ? "bg-amber-500 text-white" : "text-slate-400 hover:text-white"}`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {sub === "installments" && (
+        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+          {installments.length === 0 ? (
+            <p className="px-6 py-8 text-slate-500 text-sm text-center">No installments yet.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700">
+                  {["Expiration Date", "Description", "Amount", "Status"].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 text-slate-500 text-xs uppercase tracking-widest">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {installments.map((inst, i) => (
+                  <tr key={inst.id} className={`hover:bg-slate-900/40 transition-colors ${i < installments.length - 1 ? "border-b border-slate-700/60" : ""}`}>
+                    <td className="px-4 py-3 text-slate-300 text-xs font-mono">{inst.due_date}</td>
+                    <td className="px-4 py-3 text-white">{inst.description}</td>
+                    <td className="px-4 py-3 text-white font-medium">{fmt(inst.amount)}</td>
+                    <td className="px-4 py-3">
+                      {inst.paid ? (
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Paid</span>
+                      ) : (
+                        <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-slate-700 text-slate-400 border border-slate-600">Pending</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-slate-700">
+                  <td colSpan={2} className="px-4 py-3 text-slate-500 text-xs">Totals</td>
+                  <td className="px-4 py-3 text-white font-semibold">{fmt(installments.reduce((s, i) => s + Number(i.amount), 0))}</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      )}
+
+      {sub === "transactions" && (
+        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+          {transactions.length === 0 ? (
+            <p className="px-6 py-8 text-slate-500 text-sm text-center">No transactions yet.</p>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700">
+                  {["Issue Date", "Doc Type", "Doc No", "Explanation", "Amount"].map((h) => (
+                    <th key={h} className="text-left px-4 py-3 text-slate-500 text-xs uppercase tracking-widest">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((tx, i) => (
+                  <tr key={tx.id} className={`hover:bg-slate-900/40 transition-colors ${i < transactions.length - 1 ? "border-b border-slate-700/60" : ""}`}>
+                    <td className="px-4 py-3 text-slate-300 text-xs font-mono">{tx.issue_date}</td>
+                    <td className="px-4 py-3">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-500/15 text-blue-300 border border-blue-500/30">{tx.doc_type}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-400 text-xs font-mono">{tx.doc_no || "—"}</td>
+                    <td className="px-4 py-3 text-slate-300">{tx.explanation || "—"}</td>
+                    <td className="px-4 py-3 text-emerald-400 font-semibold">+{fmt(tx.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-slate-700">
+                  <td colSpan={4} className="px-4 py-3 text-slate-500 text-xs">Totals</td>
+                  <td className="px-4 py-3 text-emerald-400 font-semibold">+{fmt(transactions.reduce((s, t) => s + Number(t.amount), 0))}</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -60,8 +60,16 @@ def create_user(data: UserCreate, authorization: str = Header(...)):
 def get_all_users(authorization: str = Header(...)):
     token = authorization.replace("Bearer ", "")
     require_admin(token)
-    res = supabase.table("users").select("id, name, email, role, created_at").execute()
-    return res.data
+    users = supabase.table("users").select("id, name, email, role, created_at").execute().data
+    students = {r["user_id"]: r for r in supabase.table("students").select("user_id, major").execute().data}
+    professors = {r["user_id"]: r for r in supabase.table("professors").select("user_id, department, title").execute().data}
+    for u in users:
+        if u["role"] == "student" and u["id"] in students:
+            u["major"] = students[u["id"]].get("major", "")
+        elif u["role"] == "professor" and u["id"] in professors:
+            u["department"] = professors[u["id"]].get("department", "")
+            u["title"] = professors[u["id"]].get("title", "")
+    return users
 
 @router.get("/professors")
 def get_professors(authorization: str = Header(...)):
@@ -85,6 +93,12 @@ def update_user(user_id: str, data: UserUpdate, authorization: str = Header(...)
         update_fields["password_hash"] = hash_password(data.password)
     if update_fields:
         supabase.table("users").update(update_fields).eq("id", user_id).execute()
+    if data.major is not None and data.major != "":
+        supabase.table("students").update({"major": data.major}).eq("user_id", user_id).execute()
+    if data.department is not None and data.department != "":
+        supabase.table("professors").update({"department": data.department}).eq("user_id", user_id).execute()
+    if data.title is not None and data.title != "":
+        supabase.table("professors").update({"title": data.title}).eq("user_id", user_id).execute()
     return {"message": "User updated"}
 
 @router.delete("/users/{user_id}")

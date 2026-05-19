@@ -8,6 +8,8 @@ from routers.auth import router as auth_router
 from routers.admin import router as admin_router
 from routers.professor import router as professor_router
 from routers.student import router as student_router
+from routers.finance import student_router as finance_student_router
+from routers.finance import admin_router as finance_admin_router
 
 app = FastAPI(title="M.I.A University System")
 
@@ -24,3 +26,5 @@ app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 app.include_router(professor_router, prefix="/professor", tags=["Professor"])
 app.include_router(student_router, prefix="/student", tags=["Student"])
 app.include_router(mia_router, prefix="/mia", tags=["MIA"])
+app.include_router(finance_student_router, prefix="/student/finance", tags=["Finance"])
+app.include_router(finance_admin_router, prefix="/admin/finance", tags=["Finance"])
