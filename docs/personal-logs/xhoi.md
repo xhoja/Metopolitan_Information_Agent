@@ -2,7 +2,11 @@
 
 **Role:** Frontend Development — React architecture, admin and professor dashboards, routing
 
----
+## Week 7 — 2026-05-25
+
+This week I worked on data integrity, grade editing, and redesigning the student grades and transcript views. I fixed a silent overwrite bug in attendance recording — the backend now returns 409 if a week is already recorded, and the Save Session button is disabled on the frontend until the week is cleared. I added a `PUT /professor/grades/{grade_id}` endpoint and wired up an inline edit mode on the professor dashboard, where clicking Edit populates the grade form with the existing values while locking the student and course fields. On the student side, I replaced the flat grades table with a two-level course-list drilldown and rebuilt the transcript tab to group grades by semester with per-semester and cumulative averages.
+
+**Tech explored:** FastAPI 409 conflict responses, Pydantic partial-update schemas, React inline edit state patterns, grade aggregation and weighted GPA calculation on the frontend.
 
 ## Week 6 — 2026-05-16
 
@@ -10,15 +14,11 @@ This week I focused on bug fixes and feature improvements across both the admin 
 
 **Tech explored:** FastAPI form validation with optional fields, multipart file uploads with `List[UploadFile]`, JSON storage for variable-length relations, Supabase table schema alignment, React error state patterns.
 
----
-
 ## Week 5 — 2026-05-11
 
 This week I focused on system design documentation and frontend polish. I created UI system design diagrams for all four main views — Home/Login, Student Dashboard, Professor Dashboard, and Admin Dashboard — and organised them into the project docs. On the frontend side, I continued refining the React components and layout details across the dashboards to bring them closer to the final design spec.
 
 **Tech explored:** UI system design documentation, React component refinement, dashboard layout polish.
-
----
 
 ## Week 4 — 2026-04-22
 
@@ -26,15 +26,11 @@ This week I completed the UI polish pass across all dashboards — switched to l
 
 **Tech explored:** React component composition, Tailwind colour palette customisation, Vite proxy config for CORS bypass in dev.
 
----
-
 ## Week 3 — 2026-04-15
 
 This week I completed and presented the full React + Vite frontend scaffold to the team — client-side routing for all three roles (admin, professor, student) and authentication flow integrated with Supabase. From there I shifted focus to building out the admin and professor dashboard layouts. The team meeting on April 14 highlighted some compatibility issues between the frontend and backend, so the decision was made to stabilise what exists before adding new features. I spent the latter part of the week addressing those inconsistencies and aligning component structure with the backend API contracts Aida and Parashqevi had defined.
 
 **Tech explored:** React Router for role-based routing, Supabase JS client authentication, component-driven dashboard layout patterns.
-
----
 
 ## Week 2 — 2026-04-08
 
@@ -42,15 +38,11 @@ This week was focused on research and setup. I investigated React + Vite as the 
 
 **Tech explored:** React + Vite project setup, Tailwind CSS utility patterns, React Router structure planning.
 
----
-
 ## Week 1 — 2026-04-01
 
 This week the team met in person at a coffee shop near Skanderbeg Square on April 6 for the first official project meeting. Three project ideas were evaluated and the team selected M.I.A (Metropolitan Information Agent) — a full-stack university management system with an integrated AI advisor for students. The tech stack was agreed upon: React + Tailwind CSS for the frontend, Python + FastAPI for the backend, PostgreSQL hosted on Supabase, and GitHub with GitHub Desktop for version control. Xhoi and Ajna were assigned frontend development; Aida and Parashqevi backend; Loric the AI agent. My tasks for the week were to set up the React + Tailwind project, scaffold the five main pages (Home, Login, Admin Dashboard, Professor Dashboard, Student Dashboard), configure routing, and initialise the GitHub repository with agreed branching conventions.
 
 **Tech explored:** React + Vite scaffolding, Tailwind CSS initial setup, GitHub branching strategy (feature/name convention).
-
----
 
 ## Research Log
 
