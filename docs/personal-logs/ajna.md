@@ -4,6 +4,26 @@
 
 ---
 
+## Week 7 - 2026-05-25
+
+**What I worked on:**
+Polished the dashboard UI and resolved cross-tab synchronization issues. Added better error handling and user feedback for API failures, optimized responsiveness for mobile viewports, and finalized the M.I.A chat experience with session selection and new-chat reset behavior.
+
+**What I learned:**
+Gained experience in refining user-facing workflows and accessibility in a production-style dashboard. Improved my ability to debug multi-endpoint integration issues and deliver a cohesive frontend experience across complex academic features.
+
+---
+
+## Week 6 - 2026-05-18
+
+**What I worked on:**
+Expanded the student dashboard with course materials and finance views. Implemented persistent M.I.A chat sessions, session previews, and session deletion. Added robust assignment submission refresh logic, completed transcript and finance endpoint integration, and improved loading states across all student tabs.
+
+**What I learned:**
+Strengthened skills in managing complex React state for tabbed interfaces and asynchronous data flows. Learned how to design reusable API service layers and create a more polished chat UX with session handling and error recovery.
+
+---
+
 ## Week 5 - 2026-05-04
 
 **What I worked on:**
@@ -51,6 +71,26 @@ Project initialization and environment setup. Installed and configured Node.js, 
 
 **What I learned:**
 Version control basics, modern JavaScript tooling, and project scaffolding principles. Understanding of package management and development server configuration.
+
+---
+
+## Week 6 - 2026-05-18
+
+**What I worked on:**
+Expanded the student dashboard with course materials and finance views. Implemented persistent M.I.A chat sessions, session previews, and session deletion. Added robust assignment submission refresh logic, completed transcript and finance endpoint integration, and improved loading states across all student tabs.
+
+**What I learned:**
+Strengthened skills in managing complex React state for tabbed interfaces and asynchronous data flows. Learned how to design reusable API service layers and create a more polished chat UX with session handling and error recovery.
+
+---
+
+## Week 7 - 2026-05-25
+
+**What I worked on:**
+Polished the dashboard UI and resolved cross-tab synchronization issues. Added better error handling and user feedback for API failures, optimized responsiveness for mobile viewports, and finalized the M.I.A chat experience with session selection and new-chat reset behavior.
+
+**What I learned:**
+Gained experience in refining user-facing workflows and accessibility in a production-style dashboard. Improved my ability to debug multi-endpoint integration issues and deliver a cohesive frontend experience across complex academic features.
 
 ---
 
